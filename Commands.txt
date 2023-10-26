@@ -1,0 +1,48 @@
+
+General Idea:
+	1. Looks similar to english
+	2. Designed to be GUI based. Prints are largely for testing
+	3. Start at first function (All code is inside a function to make things easy) (First function gets command args)
+
+Built in types:
+	int, double, string, bool
+
+Variables (Auto typeing/declaring?):
+	Set an <type> called <Var> to <expr>.				# Will create the var if it does not exist, or find it if it does (Also consider var to var)
+	Set a global <type> called <Var> to <expr>.			# Globals are accessed anywhere (Top of file)
+		Ex: "Set an integer called Pie to 5+8."
+
+Comments:
+	# This is a line Comment
+	/* Multiline comment */ 
+	
+Expr:
+	Lets more or less copy javas expresions.
+
+Conditional:
+	if <expr> is <expr>, then: <CompoundStmt> Leave the if statement.
+		Ex: "if 4+8 is 9+3 then: Set an interger called hi to 9. Leave the if statement."
+
+Loops:
+	While <expr> is true: <CompoundStmt> Exit the while.
+		Ex: "While hi > 0 is true: Set an integer called hi to hi - 1. Exit the while."
+	
+Console:
+	Print <expr> to the console.
+
+Function:
+	Begin a function called <var> [with type <type> called <Var> [{, type <type> <Var>} and type <type> called <Var] ].			# First function is main()
+	Call the function <function>  [with <Var> [{, <Var>} and <Var] ].
+	Return <Var> to the caller.
+	Leave the function.
+	Ex: "Begin a function called Fib with type int called N.
+	Ex: "Begin a function called Foo with type int called Pie, type bool called Hello, and type string called Str.
+
+GUI:
+	Create a Box called <Var>						# Same for Circle, line, and text
+	Move <Var> to <expr> and <expr> 				# x and y pos
+	Set the size of Circle <Var> to <expr>			# Radius
+	Set the size of Box <Var> to <expr> and <expr>	# Width, height
+	Set the color of <Var> to <Color>				# Hex or some premade colors?
+	If <Box> is clicked call function <function>	# Lets do Evenets!
+	Remove <var> from the canvas.					# Boxes are auto added, but may be removed
