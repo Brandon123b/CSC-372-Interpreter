@@ -46,3 +46,7 @@ GUI:
 	Set the color of <Var> to <Color>				# Hex or some premade colors?
 	If <Box> is clicked call function <function>	# Lets do Evenets!
 	Remove <var> from the canvas.					# Boxes are auto added, but may be removed
+
+	Built in function "Gameloop" that is automatically called every frame (60fps?)
+	This is optional, but important to allow movement in the GUI, so adding
+	"Begin a function called Gameloop." is a special case 
