@@ -1,5 +1,8 @@
 # IDE files
 .vscode
 
-# Compiled class file
+# Compiled source
+bin/*
+
+# Compiled class file (just in case)
 *.class
