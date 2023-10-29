@@ -1,6 +1,9 @@
 <program>           ::= <function> <program> | <function>
 <function>          ::= <function_start> <function_body> <function_end>
-<function_start>    ::= Begin a function called <name>
+<function_start>    ::= Begin a function called <name>. | Begin a function called <name> with <args> 
+<args>              ::= <type> called <name>. | <type> called <name> and <type> called <name>.
+                        | <mult_args> <type> called <name> and <type> called <name>.
+<mult_args>         ::= <type> called <name>,
 <function_end>      ::= Leave the function.
 <return_stmt>       ::= Return <eval_expr> to the caller. | Return <value> to the caller.     
 <loop_start>        ::= While <expr>:
@@ -10,11 +13,15 @@
 <type>              ::= string | int | bool
 <graphic_type>      ::= box | circle | text
 <var_set>           ::= Set <name> to <math_expr>. | Set the <attr> of <graphic_type> to <math_expr>.
+<function_call>     ::= Call the function <name>. | Call the function <name> with <call_args>.
+<call_args>         ::= <name> | <name> and <name> | <mult_call_args> <name> and <name>
+<mult_call_args>    ::= <name>,
 <block>             ::= <expr> <block> | <expr>
 <expr>              ::= <loop_start> <block> <loop_end> | <conditional_start> <block> <conditional_end>                       
-                        | <var_set> | <eval_expr> | <math_expr> | <return_stmt> | Print <expr> to the console.
-                        | Create a <graphic_type> called <name>. | Move <name> to <value> and <value>.
-                        | If <name> is clicked call function <function>. | Remove <name> from the canvas.
+                        | <var_set> | <function_call> <eval_expr> | <math_expr> | <return_stmt>
+                        | Print <expr> to the console. | Create a <graphic_type> called <name>. 
+                        | Move <name> to <value> and <value>. | If <name> is clicked call function <function>. 
+                        | Remove <name> from the canvas.
 <eval_expr>         ::= <and_expr> or <eval_expr> | <and_expr>
 <and_expr>          ::= <not_expr> and <and_expr> | <not_expr>
 <not_expr>          ::= not <equality_expr> | <bool>
