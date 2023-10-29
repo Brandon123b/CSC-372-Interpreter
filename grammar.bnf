@@ -3,7 +3,7 @@
 <function_start>    ::= Begin a function called <name>. | Begin a function called <name> with <args> 
 <args>              ::= <type> called <name>. | <type> called <name> and <type> called <name>.
                         | <mult_args> <type> called <name> and <type> called <name>.
-<mult_args>         ::= <type> called <name>,
+<mult_args>         ::= <type> called <name>, | <type> called <name>, <mult_args>
 <function_end>      ::= Leave the function.
 <return_stmt>       ::= Return <eval_expr> to the caller. | Return <value> to the caller.     
 <loop_start>        ::= While <expr>:
@@ -15,7 +15,7 @@
 <var_set>           ::= Set <name> to <math_expr>. | Set the <attr> of <graphic_type> to <math_expr>.
 <function_call>     ::= Call the function <name>. | Call the function <name> with <call_args>.
 <call_args>         ::= <name> | <name> and <name> | <mult_call_args> <name> and <name>
-<mult_call_args>    ::= <name>,
+<mult_call_args>    ::= <name>, | <name>, <mult_call_args>
 <block>             ::= <expr> <block> | <expr>
 <expr>              ::= <loop_start> <block> <loop_end> | <conditional_start> <block> <conditional_end>                       
                         | <var_set> | <function_call> <eval_expr> | <math_expr> | <return_stmt>
