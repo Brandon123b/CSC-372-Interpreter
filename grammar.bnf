@@ -5,17 +5,26 @@
 <return_stmt>       ::= Return <eval_expr> to the caller. | Return <value> to the caller.     
 <loop_start>        ::= While <expr>:
 <loop_end>          ::= Exit the while.
-<conditional_start> ::= If <expr> is <expr>, then:
+<conditional_start> ::= If <eval_expr>, then:
 <conditional_end>   ::= Leave the if statement.
 <type>              ::= string | int | bool
 <graphic_type>      ::= box | circle | text
-<var_set>           ::= Set <name> to <eval_expr>. | Set the <attr> of <graphic_type> to <eval_expr>.
+<var_set>           ::= Set <name> to <math_expr>. | Set the <attr> of <graphic_type> to <math_expr>.
 <block>             ::= <expr> <block> | <expr>
 <expr>              ::= <loop_start> <block> <loop_end> | <conditional_start> <block> <conditional_end>                       
-                        | <var_set> | <eval_expr> | <return_stmt> | Print <expr> to the console.
+                        | <var_set> | <eval_expr> | <math_expr> | <return_stmt> | Print <expr> to the console.
                         | Create a <graphic_type> called <name>. | Move <name> to <value> and <value>.
                         | If <name> is clicked call function <function>. | Remove <name> from the canvas.
-<eval_expr>         ::= <value> <op> <value> . | <value> .
-<value>             ::= [0-9]+ | [0-9]+[.][0-9]+ | ".*" | true | false | <name>
-<op>                ::= + | - | * | / | % | and | or | not | = | < | > | <= | >=
+<eval_expr>         ::= <and_expr> or <eval_expr> | <and_expr>
+<and_expr>          ::= <not_expr> and <and_expr> | <not_expr>
+<not_expr>          ::= not <equality_expr> | <bool>
+<bool>              ::= true | false | <equality_expr>
+<equality_expr>     ::= <math_expr> <eq_op> <math_expr>
+<math_expr>         ::= <addsub_expr> <muldiv_op> <math_expr> | <addsub_expr>
+<addsub_expr>       ::= <num> <addsub_op> <addsub_expr> | <num>
+<num>               ::= [0-9]+ | [0-9]+[.][0-9]+ | <name>
+<value>             ::= <num> | ".*" | true | false | <name>
+<muldiv_op>         ::= * | / | %                                
+<addsub_op>         ::= + | -
+<eq_op>             ::= = | < | > | <= | >=
 <name>              ::= [A-Za-z0-9]+
