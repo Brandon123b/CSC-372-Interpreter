@@ -1,0 +1,20 @@
+<program>           ::= <function> <program> | <function>
+<function>          ::= <function_start> <function_body> <function_end>
+<function_start>    ::= Begin a function called <name>
+<function_end>      ::= Leave the function.
+<return_stmt>       ::= Return <eval_expr> to the caller. | Return <value> to the caller.
+<loop_start>        ::= While <expr>:
+<loop_end>          ::= Exit the while.
+<conditional_start> ::= If <expr> is <expr>, then:
+<conditional_end>   ::= Leave the if statement.
+<type>              ::= string | int | bool
+<var_declaration>   ::= Set a <type> called <name> to <eval_expr>.
+<var_update>        ::= Set <name> to <value>. | Set the <attr> of <graphic_type> to <eval_expr>.
+<block>             ::= <expr> <block> | <expr>
+<expr>              ::= <loop_start> <block> <loop_end> | <conditional_start> <block> <conditional_end>
+                        | <var_declaration> | <var_update> | <eval_expr> | <return_stmt> | Print <expr> to the console.
+                        | Create a <graphic_type> called <name>. | Move <name> to <value> and <value>.
+                        | If <name> is clicked call function <function>. | Remove <name> from the canvas.
+<eval_expr>         ::= <value <op> <value> . | <value> .
+<value>             ::= [0-9]+ | [0-9]+[.][0-9]+ | ".*" | true | false | <name>
+<op>                ::= + | - | * | / | % | and | or | not | = | < | > | <= | >=
