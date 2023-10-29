@@ -22,13 +22,13 @@
                         | Print <expr> to the console. | Create a <graphic_type> called <name>. 
                         | Move <name> to <value> and <value>. | If <name> is clicked call function <function>. 
                         | Remove <name> from the canvas.
-<eval_expr>         ::= <and_expr> or <eval_expr> | <and_expr>
-<and_expr>          ::= <not_expr> and <and_expr> | <not_expr>
+<eval_expr>         ::= <eval_expr> or <and_expr> | <and_expr>
+<and_expr>          ::= <and_expr> and <not_expr> | <not_expr>
 <not_expr>          ::= not <equality_expr> | <bool>
 <bool>              ::= true | false | <equality_expr> | (<eval_expr>)
 <equality_expr>     ::= <math_expr> <eq_op> <math_expr>
-<math_expr>         ::= <addsub_expr> <muldiv_op> <math_expr> | <addsub_expr>
-<addsub_expr>       ::= <num> <addsub_op> <addsub_expr> | <paren_expr>
+<math_expr>         ::= <math_expr> <muldiv_op> <addsub_expr> | <addsub_expr>
+<addsub_expr>       ::= <addsub_expr> <addsub_op> <num> | <paren_expr>
 <paren_expr>        ::= (<math_expr>) | <num>
 <num>               ::= [0-9]+ | [0-9]+[.][0-9]+ | <name>
 <value>             ::= <num> | ".*" | true | false | <name>
