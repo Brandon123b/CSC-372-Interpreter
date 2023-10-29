@@ -25,12 +25,12 @@
 <eval_expr>         ::= <eval_expr> or <and_expr> | <and_expr>
 <and_expr>          ::= <and_expr> and <not_expr> | <not_expr>
 <not_expr>          ::= not <equality_expr> | <bool>
-<bool>              ::= true | false | <equality_expr> | (<eval_expr>)
+<bool>              ::= true | false | <name> | <equality_expr> | (<eval_expr>)
 <equality_expr>     ::= <math_expr> <eq_op> <math_expr>
 <math_expr>         ::= <math_expr> <muldiv_op> <addsub_expr> | <addsub_expr>
 <addsub_expr>       ::= <addsub_expr> <addsub_op> <num> | <paren_expr>
-<paren_expr>        ::= (<math_expr>) | <num>
-<num>               ::= [0-9]+ | [0-9]+[.][0-9]+ | <name>
+<paren_expr>        ::= (<math_expr>) | <num> | <name>
+<num>               ::= [0-9]+ | [0-9]+[.][0-9]+
 <value>             ::= <num> | ".*" | true | false | <name>
 <muldiv_op>         ::= * | / | %                                
 <addsub_op>         ::= + | -
