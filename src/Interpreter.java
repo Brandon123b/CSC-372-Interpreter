@@ -35,22 +35,82 @@ public class Interpreter {
 		if (hasError)
 			System.exit(1);
 
-		// Print out the functions
+		// Interpret the functions
+		StringBuilder functionDecl = new StringBuilder();
 		for (Function function : functions) {
-			//  function.Print();
+			functionDecl.append(HandleFunction(function));
 		}
 
+		// Check for errors before continuing
+		if (hasError)
+			System.exit(1);
+
+		//
+		// Write to the output file
+		//
+
+		// Open the template file
 		String template = Utils.ReadFileAsString("src/MainTemplate.java");
 
 		// Replace the name of the template
 		template = template.replace("MainTemplate", programName);
+		// TODO: Replace global variables
+		// TODO: Call first function from main() (With command line args)
+		// TODO: Gameloop
+		// Replace the function declarations
+		template = template.replace("/* {Functions} */", functionDecl.toString());
 
-		Utils.WriteStringToFile(template, "src/" + outputFile);
+		Utils.WriteStringToFile(template, outputFile);
 	}
 
 	/* -------------------------------------------------------------------------- */
-	/*                                  Functions                                 */
+	/*                               Convert to Java                              */
 	/* -------------------------------------------------------------------------- */
+
+	/* -------------------------------- Function -------------------------------- */
+
+	// Convert a Function object to a Java function string
+	public static String HandleFunction(Function function){
+		StringBuilder sb = new StringBuilder();
+
+		// Add the function declaration
+		sb.append("\tpublic static void " + function.name + "(" + HandleArgs(function.parameters) + "){\n\n");
+
+		// Add the function body here
+
+		// Add the function closing
+		sb.append("\t}\n");
+
+		return sb.toString();
+	}
+
+	// Convert a List<Arg> to a Java function string
+	public static String HandleArgs(List<Arg> args){
+		StringBuilder sb = new StringBuilder();
+
+
+		// Add every argument to the string
+		for (Arg arg : args) {
+			// TODO: Boolean fix
+			if (arg.type.equals("bool"))
+				sb.append("boolean" + " " + arg.name + ", ");	// bool is actually boolean in Java
+			else
+				sb.append(arg.type + " " + arg.name + ", ");
+		}
+
+		// Remove the last comma
+		if (args.size() > 0)
+			sb.delete(sb.length() - 2, sb.length());
+
+		return sb.toString();
+	}
+
+
+	/* -------------------------------------------------------------------------- */
+	/*                              Parse From String                             */
+	/* -------------------------------------------------------------------------- */
+
+	/* -------------------------------- Function -------------------------------- */
 
 	// Splits the input string into a list of function objects
 	public static List<Function> splitIntoFunctions(String input) {
@@ -71,6 +131,7 @@ public class Interpreter {
 
 				// Print the error
 				System.out.println("SYNTAX ERROR: Unexpected text outside of function");
+				System.out.println("(Is your function declaration correct?)");
 
 				// Print the function
 				Utils.PrintFunctionError(input, lastIndex, end, lastIndex, start);
@@ -84,7 +145,7 @@ public class Interpreter {
 			List<Arg> args = ParseArgs(matcher.group(3), lineNumber);
 			String body = matcher.group(4);
 
-			Function function = new Function(name, args.toArray(new Arg[args.size()]), body, lineNumber);
+			Function function = new Function(name, args, body, lineNumber);
 			functions.add(function);
 
             lastIndex = end;
@@ -101,6 +162,7 @@ public class Interpreter {
 
 			// Print the error
 			System.out.println("SYNTAX ERROR: Unexpected text outside of function");
+			System.out.println("(Is your function declaration correct?)");
 
 			// Print the function
 			Utils.PrintFunctionError(input, start, input.length(), lastIndex, input.length());
@@ -135,7 +197,7 @@ public class Interpreter {
 		else{
 			System.err.println("ERROR: Invalid argument declaration on line " + lineNumber + ": ");
 			System.err.println("Given: \"" + argStr + "\"");
-			System.err.println("Expected one of the following: ");
+			System.err.println("Expected arguements in the following form: ");
 			System.err.println("	\"with a <type> called <name>\"");
 			System.err.println("	\"with a <type> called <name> and a <type> called <name>\"");
 			System.err.println("	\"with a <type> called <name>, a <type> called <name>, and a <type> called <name>\"");
@@ -167,7 +229,7 @@ public class Interpreter {
 		if (lastIndex < argStr.length()) {
 			System.err.println("ERROR: Invalid argument declaration: ");
 			System.err.println("Given: \"" + argStr + "\"");
-			System.err.println("Expected one of the following: ");
+			System.err.println("Expected arguements in the following form: ");
 			System.err.println("	\"with a <type> called <name>\"");
 			System.err.println("	\"with a <type> called <name> and a <type> called <name>\"");
 			System.err.println("	\"with a <type> called <name>, a <type> called <name>, and a <type> called <name>\"");
@@ -177,7 +239,6 @@ public class Interpreter {
 		return args;
 	}
 	
-
 	/* -------------------------------------------------------------------------- */
 	/*                               Data Structures                              */
 	/* -------------------------------------------------------------------------- */
@@ -185,11 +246,11 @@ public class Interpreter {
 	static class Function{
 
 		public String name;				// The name of the function
-		public Arg[] parameters;		// The parameters of the function
+		public List<Arg> parameters;		// The parameters of the function
 		public String body;				// The body of the function
 		public int lineNumber;			// The line number of the function call 
 
-		public Function(String name, Arg[] parameters, String body, int lineNumber){
+		public Function(String name, List<Arg> parameters, String body, int lineNumber){
 			this.name = name;
 			this.parameters = parameters;
 			this.body = body;

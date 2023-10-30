@@ -33,11 +33,11 @@ public class test {
 /* -------------------------------------------------------------------------- */
 
 class DrawingCanvas extends JPanel {
-	public List<DrawableObject> drawableObjects = new ArrayList<>();
-	private List<DrawableObject> objectsToRemove = new ArrayList<>(); // Avoid concurrent modification
+	public List<DrawableObject> drawableObjects_ = new ArrayList<>();
+	private List<DrawableObject> objectsToRemove_ = new ArrayList<>(); // Avoid concurrent modification
 
-	private double scaleX; // Scaling factor for X-axis
-	private double scaleY; // Scaling factor for Y-axis
+	private double scaleX_; // Scaling factor for X-axis
+	private double scaleY_; // Scaling factor for Y-axis
 
 	public DrawingCanvas() {
 
@@ -46,11 +46,11 @@ class DrawingCanvas extends JPanel {
 			public void mouseClicked(MouseEvent e) {
 
 				// Convert mouse click coordinates to logical coordinates
-				int logicalX = (int) (e.getPoint().x / scaleX);
-				int logicalY = (int) (e.getPoint().y / scaleY);
+				int logicalX = (int) (e.getPoint().x / scaleX_);
+				int logicalY = (int) (e.getPoint().y / scaleY_);
 
 				// Check if any objects were clicked
-				for (DrawableObject drawableObject : drawableObjects) {
+				for (DrawableObject drawableObject : drawableObjects_) {
 
 					// An object was clicked if it contains the mouse click
 					if (drawableObject.contains(logicalX, logicalY)) {
@@ -65,8 +65,8 @@ class DrawingCanvas extends JPanel {
 			@Override
 			public void componentResized(ComponentEvent e) {
 				// Calculate the scaling factors
-				scaleX = (double) getWidth() / 1920;	// Default logical size
-				scaleY = (double) getHeight() / 1080;	// Default logical size
+				scaleX_ = (double) getWidth() / 1920;	// Default logical size
+				scaleY_ = (double) getHeight() / 1080;	// Default logical size
 			}
 		});
 	}
@@ -87,26 +87,46 @@ class DrawingCanvas extends JPanel {
 
 		// Scale the graphics context by applying the scaling factors
 		Graphics2D g2d = (Graphics2D) g;
-		g2d.scale(scaleX, scaleY);
+		g2d.scale(scaleX_, scaleY_);
 
 		// Draw all objects
-		for (DrawableObject drawableObject : drawableObjects) {
+		for (DrawableObject drawableObject : drawableObjects_) {
 			drawableObject.draw(g);
 		}
 
 		// Remove the objects marked for removal
-		drawableObjects.removeAll(objectsToRemove);
-		objectsToRemove.clear();
+		drawableObjects_.removeAll(objectsToRemove_);
+		objectsToRemove_.clear();
 	}
 
 	/* -------------------------------------------------------------------------- */
-	/* User Added Functions */
+	/*                           Interpreted Global Vars                          */
 	/* -------------------------------------------------------------------------- */
 
-	/* {Global_Vars} */
-	Circle circle1; // To be placed at top of function
+/* {Global_Vars} */
+	Circle circle1;
 
-	/* {Functions} */
+	/* -------------------------------------------------------------------------- */
+	/*                            Interpreted Functions                           */
+	/* -------------------------------------------------------------------------- */
+
+	public static void fun0(){
+
+	}
+	public static void Fun1(int hi){
+
+	}
+	public static void Fun2(int hi, boolean foo){
+
+	}
+	public static void Fun3(int int0, boolean bool1, boolean foo){
+
+	}
+
+
+	/* -------------------------------------------------------------------------- */
+	/*                                    Temp                                    */
+	/* -------------------------------------------------------------------------- */
 
 	// A test function to show how some of these commands will work for the GUI (TODO: Remove)
 	public void DisplayCommands() {
@@ -116,7 +136,7 @@ class DrawingCanvas extends JPanel {
 		// Create a Box called box1 # Same for Circle, line, and text
 		Box box1; // To be placed at top of function
 		box1 = new Box(0, 0, 0, 0, Color.BLACK);
-		drawableObjects.add(box1);
+		drawableObjects_.add(box1);
 
 		// Set the size of Box box1 to 1900 and 540 # Width, height
 		box1.setSize(1900, 540);
@@ -130,7 +150,7 @@ class DrawingCanvas extends JPanel {
 
 		// Create a global circle called circle1
 		circle1 = new Circle(0, 0, 0, Color.BLACK);
-		drawableObjects.add(circle1);
+		drawableObjects_.add(circle1);
 
 		// Set the size of Circle circle1 to 30 # Radius
 		circle1.setRadius(30);
@@ -148,7 +168,7 @@ class DrawingCanvas extends JPanel {
 		// Create a line called line1
 		Line line1; // To be placed at top of functions
 		line1 = new Line(0, 0, 0, 0, Color.BLACK);
-		drawableObjects.add(line1);
+		drawableObjects_.add(line1);
 
 		// Set the line1 to go from 0, 0 to 100, 100
 		line1.setLine(0, 0, 100, 100);
@@ -158,7 +178,7 @@ class DrawingCanvas extends JPanel {
 		// Create a text called text1
 		Text text1; // To be placed at top of functions
 		text1 = new Text(0, 0, "Hello World!", Color.BLACK);
-		drawableObjects.add(text1);
+		drawableObjects_.add(text1);
 
 		// Set the size of text1 to 50
 		text1.setFontSize(50);
@@ -177,7 +197,7 @@ class DrawingCanvas extends JPanel {
 		System.out.println("Circle 1 killed!");
 
 		// Remove circle1 from the canvas. (circle1 is global)
-		objectsToRemove.add(circle1);
+		objectsToRemove_.add(circle1);
 	}
 }
 

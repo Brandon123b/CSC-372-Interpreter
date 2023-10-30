@@ -7,9 +7,13 @@ all: bin/MainTemplate.class bin/Interpreter.class
 $(BIN_DIR)/%.class: $(SRC_DIR)/%.java
 	javac -sourcepath $(SRC_DIR) -d $(BIN_DIR) $<
 
-# Compile and run any class file under bin
+# Compile and run any class file under in the src directory
 %: bin/%.class
 	java -cp $(BIN_DIR) $@
+
+test: test.java
+	javac -sourcepath $(SRC_DIR) -d $(BIN_DIR) $<
+	java -cp $(BIN_DIR) test
 
 clean:
 	rm -rf bin/*

@@ -10,7 +10,7 @@ Begin a function called Fun1 with a int called hi.
 	// Do something
 Leave the function.
 
-Begin a function called Fun2 with an int called hi, and a bool called foo. 
+Begin a function called Fun2 with an int cal led hi, and a bool called foo. 
 	// Function
 	// Do something
 Leave the function.

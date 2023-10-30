@@ -62,7 +62,7 @@ public class Utils {
 
 		// Line beginning strings
 		String correct = " -> ";
-		String error = " -? ";
+		String error = " =? ";
 
         StringBuilder result = new StringBuilder();
         String[] lines = input.split("\n");
