@@ -1,4 +1,5 @@
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -6,14 +7,12 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
-import Templates.DrawableObjects.*;
-import Templates.DrawableObjects.Box;
-
-public class MainTemplate { // TODO: Replace with program name
+public class test {
 
 	public static void main(String[] args) {
-		JFrame frame = new JFrame("Simple Drawing Program"); // TODO: Replace with program name
+		JFrame frame = new JFrame("test");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setSize(1920 / 2, 1080 / 2); // Default window size
 		frame.setLocationRelativeTo(null); // Center the window
@@ -30,6 +29,8 @@ public class MainTemplate { // TODO: Replace with program name
 	}
 
 }
+
+/* -------------------------------------------------------------------------- */
 
 class DrawingCanvas extends JPanel {
 	public List<DrawableObject> drawableObjects = new ArrayList<>();
@@ -177,5 +178,170 @@ class DrawingCanvas extends JPanel {
 
 		// Remove circle1 from the canvas. (circle1 is global)
 		objectsToRemove.add(circle1);
+	}
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                 GUI Objects                                */
+/* -------------------------------------------------------------------------- */
+
+abstract class DrawableObject {
+	protected int x, y; // Position
+	protected Color color;
+
+	private Consumer<Integer> onClicked = input -> {
+	}; // Default empty lambda
+
+	public DrawableObject(int x, int y, Color color) {
+		this.x = x;
+		this.y = y;
+		this.color = color;
+	}
+
+	// Moves the object to the specified position
+	public void moveTo(int x, int y) {
+		this.x = x;
+		this.y = y;
+	}
+
+	// Sets the onClicked lambda
+	public void setOnClicked(Consumer<Integer> onClicked) {
+		this.onClicked = onClicked;
+	}
+
+	// Sets the color of the object
+	public void setColor(Color color) {
+		this.color = color;
+	}
+
+	// Calls the onClicked lambda
+	public void onClick() {
+		onClicked.accept(0);
+	}
+
+	// Draws the object to the Graphics object
+	public abstract void draw(Graphics g);
+
+	// Used for checking if a point is inside the object (for mouse clicks)
+	public abstract boolean contains(int x, int y);
+}
+
+class Box extends DrawableObject {
+	private int width, height;
+
+	public Box(int x, int y, int width, int height, Color color) {
+		super(x, y, color);
+		this.width = width;
+		this.height = height;
+	}
+
+	public void setSize(int width, int height) {
+		this.width = width;
+		this.height = height;
+	}
+
+	@Override
+	public void draw(Graphics g) {
+		g.setColor(color);
+		g.fillRect(x, y, width, height);
+	}
+
+	@Override
+	public boolean contains(int x, int y) {
+		return x >= this.x && x <= this.x + width && y >= this.y && y <= this.y + height;
+	}
+}
+
+class Circle extends DrawableObject {
+	private int radius;
+
+	public Circle(int x, int y, int radius, Color color) {
+		super(x, y, color);
+		this.radius = radius;
+	}
+
+	public void setRadius(int radius) {
+		this.radius = radius;
+	}
+
+	@Override
+	public void draw(Graphics g) {
+		g.setColor(color);
+		g.fillOval(x - radius, y - radius, 2 * radius, 2 * radius);
+	}
+
+	@Override
+	public boolean contains(int x, int y) {
+		int dx = this.x - x;
+		int dy = this.y - y;
+		return dx * dx + dy * dy <= radius * radius;
+	}
+}
+
+class Line extends DrawableObject {
+	private Point start; // Starting point of the line
+	private Point end; // Ending point of the line
+
+	public Line(int x1, int y1, int x2, int y2, Color color) {
+		super(-1, -1, color); // position is not used
+
+		// Define the starting and ending points
+		start = new Point(x1, y1);
+		end = new Point(x2, y2);
+	}
+
+	// Sets the starting and ending points of the line
+	public void setLine(int x1, int y1, int x2, int y2) {
+		start.setLocation(x1, y1);
+		end.setLocation(x2, y2);
+	}
+
+	@Override
+	public void draw(Graphics g) {
+		g.setColor(color);
+		g.drawLine(start.x, start.y, end.x, end.y);
+	}
+
+	@Override
+	public boolean contains(int x, int y) {
+		return false; // Lines are not clickable (yet?)
+	}
+}
+
+class Text extends DrawableObject {
+	private String text;
+	private Font font = new Font("Arial", Font.PLAIN, 12); // Default font
+
+	public Text(int x, int y, String text, Color color) {
+		super(x, y, color);
+		this.text = text;
+	}
+
+	// Sets the text of the object
+	public void setText(String text) {
+		this.text = text;
+	}
+
+	// Sets the font of the text (Maybe add a font size parameter? or command?)
+	public void setFont(Font font) {
+		this.font = font;
+	}
+
+	// Sets the size of the font
+	public void setFontSize(int size) {
+		font = new Font(font.getName(), font.getStyle(), size);
+	}
+
+	@Override
+	public void draw(Graphics g) {
+		g.setColor(color);
+		g.setFont(font);
+		g.drawString(text, x, y);
+	}
+
+	@Override
+	public boolean contains(int x, int y) {
+		// Text objects are not clickable, so always return false
+		return false;
 	}
 }

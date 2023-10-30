@@ -1,16 +1,15 @@
-SRC_DIR := Templates
+SRC_DIR := src
 BIN_DIR := bin
 
-all: Interpreter.class $(BIN_DIR)/MainTemplate.class
+all: bin/MainTemplate.class bin/Interpreter.class
+	
+# Generic rule for compiling any java file given its path in bin
+$(BIN_DIR)/%.class: $(SRC_DIR)/%.java
+	javac -sourcepath $(SRC_DIR) -d $(BIN_DIR) $<
 
-$(BIN_DIR)/MainTemplate.class: $(SRC_DIR)/MainTemplate.java
-	javac -d $(BIN_DIR) $<
-
-Interpreter.class: Interpreter.java
-	javac -d $(BIN_DIR) $<
-
-run: all
-	java -cp $(BIN_DIR) MainTemplate
+# Compile and run any class file under bin
+%: bin/%.class
+	java -cp $(BIN_DIR) $@
 
 clean:
 	rm -rf bin/*
