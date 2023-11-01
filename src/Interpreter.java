@@ -55,7 +55,8 @@ public class Interpreter {
 		// Replace the name of the template
 		template = template.replace("MainTemplate", programName);
 		// TODO: Replace global variables
-		// TODO: Call first function from main() (With command line args)
+		// Call first function from main() (With command line args)
+		template = template.replace("/* {Call_Start} */", CallMainFunction(functions.get(0)));
 		// TODO: Gameloop
 		// Replace the function declarations
 		template = template.replace("/* {Functions} */", functionDecl.toString());
@@ -105,6 +106,50 @@ public class Interpreter {
 		return sb.toString();
 	}
 
+	// Convert the main function to a Java function call string
+	// Args are converted and passed automatically with error checking at runtime
+	public static String CallMainFunction(Function function) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("if(args.length != " + function.parameters.size() + ") {\n");
+		sb.append("\t\t\tSystem.out.println(\"Invalid number of arguments specified!\");\n");
+		sb.append("\t\t\tSystem.exit(1);\n");
+		sb.append("\t\t}\n");
+
+		sb.append("\t\ttry {\n");
+		sb.append("\t\t\t" + function.name + "(");
+
+		boolean first = true;
+		for (int i = 0; i < function.parameters.size(); i++) {
+			if (!first) {
+				sb.append(", ");
+			}
+
+			switch(function.parameters.get(i).type) {
+				case "string":
+					sb.append("args[" + i + "]");
+					break;
+				case "int":
+					sb.append("Integer.parseInt(args[" + i + "])");
+					break;
+				case "bool":
+					sb.append("Boolean.parseBoolean(args[" + i + "])");
+					break;
+				case "double":
+					sb.append("Double.parseDouble(args[" + i + "])");
+					break;
+			}
+
+			first = false;
+		}
+
+		sb.append(");\n");
+
+		sb.append("\t\t} catch (Exception e) {\n");
+		sb.append("\t\t\tSystem.out.println(\"Invalid arguments specified!\");\n");
+		sb.append("\t\t\tSystem.exit(1);\n");
+		sb.append("\t\t}");
+		return sb.toString();
+	}
 
 	/* -------------------------------------------------------------------------- */
 	/*                              Parse From String                             */
