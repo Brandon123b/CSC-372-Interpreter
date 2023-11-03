@@ -189,8 +189,9 @@ public class Interpreter {
 			String name = matcher.group(2);
 			List<Arg> args = ParseArgs(matcher.group(3), lineNumber);
 
+			String body = "";
 			try {
-				String body = ParseBlock(matcher.group(4));
+				body = ParseBlock(matcher.group(4));
 			} catch (Exception e) {
 				// TODO somehow we need to get the line number from the exception message
 				System.out.println("ERROR: Unrecognized expression: ");
