@@ -111,7 +111,7 @@ public class Interpreter {
 	public static String CallMainFunction(Function function) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("if(args.length != " + function.parameters.size() + ") {\n");
-		sb.append("\t\t\tSystem.out.println(\"Invalid number of arguments specified!\");\n");
+		sb.append("\t\t\tSystem.err.println(\"Invalid number of arguments specified!\");\n");
 		sb.append("\t\t\tSystem.exit(1);\n");
 		sb.append("\t\t}\n");
 
@@ -145,7 +145,7 @@ public class Interpreter {
 		sb.append(");\n");
 
 		sb.append("\t\t} catch (Exception e) {\n");
-		sb.append("\t\t\tSystem.out.println(\"Invalid arguments specified!\");\n");
+		sb.append("\t\t\tSystem.err.println(\"Invalid arguments specified!\");\n");
 		sb.append("\t\t\tSystem.exit(1);\n");
 		sb.append("\t\t}");
 		return sb.toString();
@@ -188,7 +188,15 @@ public class Interpreter {
 			int lineNumber = Utils.getLineNumber(input, matcher.start(2));
 			String name = matcher.group(2);
 			List<Arg> args = ParseArgs(matcher.group(3), lineNumber);
-			String body = matcher.group(4);
+
+			try {
+				String body = ParseBlock(matcher.group(4));
+			} catch (Exception e) {
+				// TODO somehow we need to get the line number from the exception message
+				System.out.println("ERROR: Unrecognized expression: ");
+				Utils.PrintFunctionError(input, start, end, start, end);
+				hasError = true;
+			}
 
 			Function function = new Function(name, args, body, lineNumber);
 			functions.add(function);
@@ -282,6 +290,22 @@ public class Interpreter {
 		}
 	
 		return args;
+	}
+
+	// Parse a block by matching expressions until either the block is empty or no match is found
+	public static String ParseBlock(String input) {
+		StringBuilder sb = new StringBuilder();
+		while(!input.equals("")) {
+
+			// here we need to check for each possible expression type and update input and sb accordingly
+
+			else {
+				throw new Exception(input);
+			}
+		}
+
+		// if we get here we're done parsing and we didn't find any errors
+		return sb.toString();
 	}
 	
 	/* -------------------------------------------------------------------------- */
