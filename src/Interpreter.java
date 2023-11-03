@@ -299,9 +299,9 @@ public class Interpreter {
 
 			// here we need to check for each possible expression type and update input and sb accordingly
 
-			else {
+			//else {
 				throw new Exception(input);
-			}
+			//}
 		}
 
 		// if we get here we're done parsing and we didn't find any errors
