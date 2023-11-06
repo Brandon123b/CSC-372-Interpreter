@@ -6,30 +6,31 @@
 <mult_args>         ::= <type> called <name>, | <type> called <name>, <mult_args>
 <function_end>      ::= Leave the function.
 <return_stmt>       ::= Return <eval_expr> to the caller. | Return <value> to the caller.     
-<loop_start>        ::= While <expr>:
+<loop_start>        ::= While <eval_expr>:
 <loop_end>          ::= Exit the while.
 <conditional_start> ::= If <eval_expr>, then:
 <conditional_end>   ::= Leave the if statement.
 <type>              ::= string | int | bool | double
 <graphic_type>      ::= box | circle | text
-<var_set>           ::= Set <name> to <math_expr>. | Set <name> to <value>.
+<var_set>           ::= Set <name> to <eval_expr>. | Set <name> to <math_expr>. | Set <name> to <value>.
+                        | Set <name> to <function_call>.
                         | Set the <attr> of <graphic_type> to <math_expr>.
 <function_call>     ::= Call the function <name>. | Call the function <name> with <call_args>.
 <call_args>         ::= <name> | <name> and <name> | <mult_call_args> <name> and <name>
 <mult_call_args>    ::= <name>, | <name>, <mult_call_args>
 <block>             ::= <expr> <block> | <expr>
 <expr>              ::= <loop_start> <block> <loop_end> | <conditional_start> <block> <conditional_end>                       
-                        | <var_set> | <function_call> | <eval_expr> | <math_expr> | <return_stmt>
+                        | <var_set> | <function_call> | <return_stmt>
                         | Print <expr> to the console. | Create a <graphic_type> called <name>. 
                         | Move <name> to <value> and <value>. | If <name> is clicked call function <function>. 
                         | Remove <name> from the canvas.
 <eval_expr>         ::= <eval_expr> or <and_expr> | <and_expr>
 <and_expr>          ::= <and_expr> and <not_expr> | <not_expr>
-<not_expr>          ::= not <equality_expr> | <bool>
+<not_expr>          ::= not <bool> | <bool>
 <bool>              ::= true | false | <name> | <equality_expr> | (<eval_expr>)
 <equality_expr>     ::= <math_expr> <eq_op> <math_expr>
-<math_expr>         ::= <math_expr> <muldiv_op> <addsub_expr> | <addsub_expr>
-<addsub_expr>       ::= <addsub_expr> <addsub_op> <num> | <paren_expr>
+<math_expr>         ::= <math_expr> <addsub_op> <muldiv_expr> | <muldiv_expr>
+<muldiv_expr>       ::= <muldiv_expr> <muldiv_op> <num> | <paren_expr>
 <paren_expr>        ::= (<math_expr>) | <num> | <name>
 <num>               ::= [0-9]+ | [0-9]+[.][0-9]+
 <value>             ::= <num> | ".*" | true | false | <name>
