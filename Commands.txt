@@ -8,9 +8,9 @@ Built in types:
 	int, double, string, bool
 
 Variables (Auto typeing/declaring?):
-	Set an <type> called <Var> to <expr>.				# Will create the var if it does not exist, or find it if it does (Also consider var to var)
-	Set a global <type> called <Var> to <expr>.			# Globals are accessed anywhere (Top of file)
-		Ex: "Set an integer called Pie to 5+8."
+	Set <Var> to <expr>.				# Will create the var if it does not exist, or find it if it does (Also consider var to var)
+	Set global <Var> to <expr>.			# Globals are accessed anywhere (Top of file)
+		Ex: "Set Pie to 5+8."
 
 Comments:
 	# This is a line Comment
