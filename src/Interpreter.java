@@ -16,6 +16,8 @@ public class Interpreter {
 	static String outputFile;
 	static boolean hasError = false;
 
+	static Map<String, String> globalVars = new HashMap<>();
+
 	public static void main(String[] args) {
 
 		// Get input file from command line
@@ -57,7 +59,8 @@ public class Interpreter {
 
 		// Replace the name of the template
 		template = template.replace("MainTemplate", programName);
-		// TODO: Replace global variables
+		// Replace global variables
+		template = template.replace("/* {Global_Vars} */", GlobalVariables());
 		// Call first function from main() (With command line args)
 		template = template.replace("/* {Call_Start} */", CallMainFunction(functions.get(0)));
 		// TODO: Gameloop
@@ -152,6 +155,14 @@ public class Interpreter {
 		sb.append("\t\t\tSystem.err.println(\"Invalid arguments specified!\");\n");
 		sb.append("\t\t\tSystem.exit(1);\n");
 		sb.append("\t\t}");
+		return sb.toString();
+	}
+
+	public static String GlobalVariables() {
+		StringBuilder sb = new StringBuilder();
+		for (var entry : globalVars.entrySet()) {
+			sb.append("\t").append(entry.getValue()).append(" ").append(entry.getKey()).append(";\n");
+		}
 		return sb.toString();
 	}
 
@@ -304,6 +315,7 @@ public class Interpreter {
 		Pattern condStartPattern    = Pattern.compile("^If (.+), then$");
 		Pattern condEndPattern      = Pattern.compile("^Leave the if statement$");
 		Pattern varSetPattern       = Pattern.compile("^Set ([A-Za-z0-9]+) to (.+)");
+		Pattern globalVarSetPattern = Pattern.compile("^Set global ([A-Za-z0-9]+) to (.+)");
 		Pattern functionCallPattern = Pattern.compile("^Call the function (.+)");
 
 		int curLine = start;
@@ -320,6 +332,7 @@ public class Interpreter {
 			Matcher condStart = condStartPattern.matcher(line);
 			Matcher condEnd = condEndPattern.matcher(line);
 			Matcher varSet = varSetPattern.matcher(line);
+			Matcher globalVarSet = globalVarSetPattern.matcher(line);
 			Matcher functionCall = functionCallPattern.matcher(line);
 
 			if (loopStart.find()) {
@@ -363,6 +376,20 @@ public class Interpreter {
 				} else {
 					sb.append(indent + tmp + ";\n");
 				}
+			} else if (globalVarSet.find()) {
+				String val;
+				if (i + 1 < input.size() && Pattern.compile("[0-9]+").matcher(input.get(i + 1)).matches()) {
+					val = globalVarSet.group(2) + "." + input.get(i + 1);
+					i++;
+				} else {
+					val = globalVarSet.group(2);
+				}
+				String tmp = ParseGlobalVarSet(globalVarSet.group(1), val, blockVars, file, start, end, curLine);
+				if (tmp.equals("")) {
+					return "";
+				} else {
+					sb.append(indent + tmp + ";\n");
+				}
 			} else if (functionCall.find()) {
 				sb.append(indent + ParseFunctionCall(line) + "\n");
 			} else {
@@ -378,9 +405,15 @@ public class Interpreter {
 	}
 
 	public static String ParseVarSet(String name, String val, Map<String, String> blockVars, String file, int start, int end, int curLine) {
-		if (blockVars.containsKey(name)) {
-			switch(blockVars.get(name)) {
-				case "string":
+		String type = "";
+		if (globalVars.containsKey(name)) {
+			type = globalVars.get(name);
+		} else if (blockVars.containsKey(name)) {
+			type = blockVars.get(name);
+		}
+		if (!type.equals("")) {
+			switch(type) {
+				case "String":
 					if (Pattern.compile("^\".*\"$").matcher(val).matches()) {
 						return name + " = " + val;
 					} else {
@@ -421,7 +454,7 @@ public class Interpreter {
 			}
 		} else {
 			if (Pattern.compile("^\".*\"$").matcher(val).matches()) {
-				blockVars.put(name, "string");
+				blockVars.put(name, "String");
 				return "String " + name + " = " + val;
 			} else if (Pattern.compile("^[0-9]+$").matcher(val).matches()) {
 				blockVars.put(name, "int");
@@ -432,6 +465,71 @@ public class Interpreter {
 			} else if (val.equals("true") || val.equals("false")) {
 				blockVars.put(name, "boolean");
 				return "boolean " + name + " = " + val;
+			} else {
+				// error
+				System.out.println("SYNTAX ERROR: " + val + " is not a valid variable value");
+				Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+			}
+		}
+
+		return "";
+	}
+
+	public static String ParseGlobalVarSet(String name, String val, Map<String, String> blockVars, String file, int start, int end, int curLine) {
+		if (globalVars.containsKey(name)) {
+			switch(globalVars.get(name)) {
+				case "String":
+					if (Pattern.compile("^\".*\"$").matcher(val).matches()) {
+						return name + " = " + val;
+					} else {
+						// error
+						System.out.println("SYNTAX ERROR: variable " + name + " has already been defined as a string, but tried to assign a non-string value");
+						Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+					}
+					break;
+				case "int":
+					try {
+						return name + " = " + Integer.parseInt(val);
+					} catch (Exception e) {
+						// error
+						System.out.println("SYNTAX ERROR: variable " + name + " has already been defined as an int, but tried to assign a non-int value");
+						Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+					}
+					break;
+				case "double":
+					try {
+						return name + " = " + Double.parseDouble(val);
+					} catch (Exception e) {
+						// error
+						System.out.println("SYNTAX ERROR: variable " + name + " has already been defined as a double, but tried to assign a non-double value");
+						Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+					}
+					break;
+				case "boolean":
+					if (val.equals("true") || val.equals("false")) {
+						return name + " = " + val;
+					} else {
+						// error
+						System.out.println("SYNTAX ERROR: variable " + name + " has already been defined as a boolean but tried to assign a non-boolean value");
+						Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+					}
+					break;
+				default:
+					System.out.println("if you see this, there's a bug in Interpreter.java :(");
+			}
+		} else {
+			if (Pattern.compile("^\".*\"$").matcher(val).matches()) {
+				globalVars.put(name, "String");
+				return name + " = " + val;
+			} else if (Pattern.compile("^[0-9]+$").matcher(val).matches()) {
+				globalVars.put(name, "int");
+				return name + " = " + val;
+			} else if (Pattern.compile("^[0-9]+\\.[0-9]+$").matcher(val).matches()) {
+				globalVars.put(name, "double");
+				return name + " = " + val;
+			} else if (val.equals("true") || val.equals("false")) {
+				globalVars.put(name, "boolean");
+				return name + " = " + val;
 			} else {
 				// error
 				System.out.println("SYNTAX ERROR: " + val + " is not a valid variable value");
