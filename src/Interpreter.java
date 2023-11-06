@@ -1,4 +1,7 @@
-
+import java.util.Arrays;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Stack;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,6 +81,7 @@ public class Interpreter {
 		sb.append("\tpublic static void " + function.name + "(" + HandleArgs(function.parameters) + "){\n\n");
 
 		// Add the function body here
+		sb.append(function.body);
 
 		// Add the function closing
 		sb.append("\t}\n");
@@ -161,7 +165,7 @@ public class Interpreter {
 	public static List<Function> splitIntoFunctions(String input) {
         List<Function> functions = new ArrayList<>();
 
-		Pattern pattern = Pattern.compile("(\\s*)Begin a function called ([a-zA-Z0-9]+) ?([^.]+)?\\.(.*?)Leave the function\\.(\\s*)", Pattern.DOTALL);
+		Pattern pattern = Pattern.compile("(\\s*)Begin a function called ([a-zA-Z0-9]+) ?([^.]+)?\\.(.*?)(Leave the function\\.)(\\s*)", Pattern.DOTALL);
         Matcher matcher = pattern.matcher(input);
 
         int lastIndex = 0;
@@ -186,18 +190,11 @@ public class Interpreter {
 		
 			// Add the function call to the list
 			int lineNumber = Utils.getLineNumber(input, matcher.start(2));
+			int endLineNumber = Utils.getLineNumber(input, matcher.start(5)) + 1;
 			String name = matcher.group(2);
 			List<Arg> args = ParseArgs(matcher.group(3), lineNumber);
 
-			String body = "";
-			try {
-				body = ParseBlock(matcher.group(4));
-			} catch (Exception e) {
-				// TODO somehow we need to get the line number from the exception message
-				System.out.println("ERROR: Unrecognized expression: ");
-				Utils.PrintFunctionError(input, start, end, start, end);
-				hasError = true;
-			}
+			String body = ParseBlock(matcher.group(4), "\t\t", input, lineNumber, endLineNumber);
 
 			Function function = new Function(name, args, body, lineNumber);
 			functions.add(function);
@@ -294,19 +291,171 @@ public class Interpreter {
 	}
 
 	// Parse a block by matching expressions until either the block is empty or no match is found
-	public static String ParseBlock(String input) {
+	public static String ParseBlock(String input, String indent, String file, int start, int end) {
+		return ParseBlock(Arrays.asList(input.split("[\\.:]")), indent, file, start, end, new HashMap<>());
+	}
+
+	public static String ParseBlock(List<String> input, String indent, String file, int start, int end, Map<String, String> blockVars) {
 		StringBuilder sb = new StringBuilder();
-		while(!input.equals("")) {
+		Stack<String> nesting = new Stack<>();
 
-			// here we need to check for each possible expression type and update input and sb accordingly
+		Pattern loopStartPattern    = Pattern.compile("^While (.+)$");
+		Pattern loopEndPattern      = Pattern.compile("^Exit the while$");
+		Pattern condStartPattern    = Pattern.compile("^If (.+), then$");
+		Pattern condEndPattern      = Pattern.compile("^Leave the if statement$");
+		Pattern varSetPattern       = Pattern.compile("^Set ([A-Za-z0-9]+) to (.+)");
+		Pattern functionCallPattern = Pattern.compile("^Call the function (.+)");
 
-			//else {
-				throw new Exception(input);
-			//}
+		int curLine = start;
+
+		for (int i = 0; i < input.size(); i++) {
+			if (input.get(i).contains("\n")) {
+				curLine++;
+			}
+			String line = input.get(i).strip();
+			if (line.equals("")) continue;
+
+			Matcher loopStart = loopStartPattern.matcher(line);
+			Matcher loopEnd = loopEndPattern.matcher(line);
+			Matcher condStart = condStartPattern.matcher(line);
+			Matcher condEnd = condEndPattern.matcher(line);
+			Matcher varSet = varSetPattern.matcher(line);
+			Matcher functionCall = functionCallPattern.matcher(line);
+
+			if (loopStart.find()) {
+				nesting.push("loop");
+				sb.append(indent + "while (" + ParseEvalExpr(loopStart.group(1)) + ") {\n");
+				indent += "\t";
+			} else if (loopEnd.find()) {
+				if (nesting.empty() || !nesting.pop().equals("loop")) {
+					// error
+					System.out.println("SYNTAX ERROR: tried to exit a nonexistent while statement");
+					Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+					return "";
+				}
+				indent = indent.substring(1);
+				sb.append(indent + "}\n");
+			} else if (condStart.find()) {
+				nesting.push("cond");
+				sb.append(indent + "if (" + ParseEvalExpr(condStart.group(1)) + ") {\n");
+				indent += "\t";
+			} else if (condEnd.find()) {
+				if (nesting.empty() || !nesting.pop().equals("cond")) {
+					// error
+					System.out.println("SYNTAX ERROR: tried to exit a nonexistent if statement");
+					Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+					return "";
+				}
+				indent = indent.substring(1);
+				sb.append(indent + "}\n");
+			} else if (varSet.find()) {
+				// special logic for doubles because of "." character ambiguity
+				String val;
+				if (i + 1 < input.size() && Pattern.compile("[0-9]+").matcher(input.get(i + 1)).matches()) {
+					val = varSet.group(2) + "." + input.get(i + 1);
+					i++;
+				} else {
+					val = varSet.group(2);
+				}
+				String tmp = ParseVarSet(varSet.group(1), val, blockVars, file, start, end, curLine);
+				if (tmp.equals("")) {
+					return "";
+				} else {
+					sb.append(indent + tmp + ";\n");
+				}
+			} else if (functionCall.find()) {
+				sb.append(indent + ParseFunctionCall(line) + "\n");
+			} else {
+				// error
+				System.out.println("SYNTAX ERROR: unrecognized statement " + line);
+				Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+				return "";
+			}
 		}
 
 		// if we get here we're done parsing and we didn't find any errors
 		return sb.toString();
+	}
+
+	public static String ParseVarSet(String name, String val, Map<String, String> blockVars, String file, int start, int end, int curLine) {
+		if (blockVars.containsKey(name)) {
+			switch(blockVars.get(name)) {
+				case "string":
+					if (Pattern.compile("^\".*\"$").matcher(val).matches()) {
+						return name + " = " + val;
+					} else {
+						// error
+						System.out.println("SYNTAX ERROR: variable " + name + " has already been defined as a string, but tried to assign a non-string value");
+						Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+					}
+					break;
+				case "int":
+					try {
+						return name + " = " + Integer.parseInt(val);
+					} catch (Exception e) {
+						// error
+						System.out.println("SYNTAX ERROR: variable " + name + " has already been defined as an int, but tried to assign a non-int value");
+						Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+					}
+					break;
+				case "double":
+					try {
+						return name + " = " + Double.parseDouble(val);
+					} catch (Exception e) {
+						// error
+						System.out.println("SYNTAX ERROR: variable " + name + " has already been defined as a double, but tried to assign a non-double value");
+						Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+					}
+					break;
+				case "boolean":
+					if (val.equals("true") || val.equals("false")) {
+						return name + " = " + val;
+					} else {
+						// error
+						System.out.println("SYNTAX ERROR: variable " + name + " has already been defined as a boolean but tried to assign a non-boolean value");
+						Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+					}
+					break;
+				default:
+					System.out.println("if you see this, there's a bug in Interpreter.java :(");
+			}
+		} else {
+			if (Pattern.compile("^\".*\"$").matcher(val).matches()) {
+				blockVars.put(name, "string");
+				return "String " + name + " = " + val;
+			} else if (Pattern.compile("^[0-9]+$").matcher(val).matches()) {
+				blockVars.put(name, "int");
+				return "int " + name + " = " + val;
+			} else if (Pattern.compile("^[0-9]+\\.[0-9]+$").matcher(val).matches()) {
+				blockVars.put(name, "double");
+				return "double " + name + " = " + val;
+			} else if (val.equals("true") || val.equals("false")) {
+				blockVars.put(name, "boolean");
+				return "boolean " + name + " = " + val;
+			} else {
+				// error
+				System.out.println("SYNTAX ERROR: " + val + " is not a valid variable value");
+				Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+			}
+		}
+
+		return "";
+	}
+
+	public static String ParseFunctionCall(String input) {
+		return "";
+	}
+
+	public static String ParseEvalExpr(String input) {
+		return "";
+	}
+
+	public static String ParseMathExpr(String input) {
+		return "";
+	}
+
+	public static String ParseReturnStmt(String input) {
+		return "";
 	}
 	
 	/* -------------------------------------------------------------------------- */
