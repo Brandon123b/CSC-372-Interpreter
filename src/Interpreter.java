@@ -1,5 +1,6 @@
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.HashMap;
 import java.util.Stack;
 
@@ -160,7 +161,7 @@ public class Interpreter {
 
 	public static String GlobalVariables() {
 		StringBuilder sb = new StringBuilder();
-		for (var entry : globalVars.entrySet()) {
+		for (Map.Entry entry : globalVars.entrySet()) {
 			sb.append("\tstatic ").append(entry.getValue()).append(" ").append(entry.getKey()).append(";\n");
 		}
 		return sb.toString();
