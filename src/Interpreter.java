@@ -432,7 +432,7 @@ public class Interpreter {
 							char eqnType = tmp.charAt(0);
 							tmp = tmp.substring(1);
 							if (eqnType == 'i') {
-								return name + " = " + val;
+								return name + " = " + tmp;
 							}
 						}
 						// error
@@ -449,7 +449,7 @@ public class Interpreter {
 						if (!tmp.equals("")) {
 							char eqnType = tmp.charAt(0);
 							tmp = tmp.substring(1);
-							return name + " = " + val;
+							return name + " = " + tmp;
 						}
 						// error
 						System.out.println("SYNTAX ERROR: variable " + name + " has already been defined as a double, but tried to assign a non-double value");
@@ -460,6 +460,12 @@ public class Interpreter {
 					if (val.equals("true") || val.equals("false")) {
 						return name + " = " + val;
 					} else {
+						// try to parse as an equality expr
+						String tmp = ParseEqualityExpr(val, blockVars);
+						if (!tmp.equals("")) {
+							return name + " = " + tmp;
+						}
+
 						// error
 						System.out.println("SYNTAX ERROR: variable " + name + " has already been defined as a boolean but tried to assign a non-boolean value");
 						Utils.PrintParseError(file, start, end, curLine, curLine + 1);
@@ -489,11 +495,20 @@ public class Interpreter {
 					tmp = tmp.substring(1);
 					if (eqnType == 'i') {
 						blockVars.put(name, "int");
+						return "int " + name + " = " + tmp;
 					} else {
 						blockVars.put(name, "double");
+						return "double " + name + " = " + tmp;
 					}
-					return name + " = " + val;
 				}
+
+				// try to parse as an equality expr
+				tmp = ParseEqualityExpr(val, blockVars);
+				if (!tmp.equals("")) {
+					blockVars.put(name, "boolean");
+					return "boolean " + name + " = " + tmp;
+				}
+
 				// error
 				System.out.println("SYNTAX ERROR: " + val + " is not a valid variable value");
 				Utils.PrintParseError(file, start, end, curLine, curLine + 1);
@@ -525,7 +540,7 @@ public class Interpreter {
 							char eqnType = tmp.charAt(0);
 							tmp = tmp.substring(1);
 							if (eqnType == 'i') {
-								return name + " = " + val;
+								return name + " = " + tmp;
 							}
 						}
 						// error
@@ -541,7 +556,7 @@ public class Interpreter {
 						String tmp = ParseMathExpr(val, blockVars);
 						if (!tmp.equals("")) {
 							tmp = tmp.substring(1);
-							return name + " = " + val;
+							return name + " = " + tmp;
 						}
 						// error
 						System.out.println("SYNTAX ERROR: variable " + name + " has already been defined as a double, but tried to assign a non-double value");
@@ -552,6 +567,11 @@ public class Interpreter {
 					if (val.equals("true") || val.equals("false")) {
 						return name + " = " + val;
 					} else {
+						// try to parse as an equality expr
+						String tmp = ParseEqualityExpr(val, blockVars);
+						if (!tmp.equals("")) {
+							return name + " = " + tmp;
+						}
 						// error
 						System.out.println("SYNTAX ERROR: variable " + name + " has already been defined as a boolean but tried to assign a non-boolean value");
 						Utils.PrintParseError(file, start, end, curLine, curLine + 1);
@@ -575,7 +595,6 @@ public class Interpreter {
 				return name + " = " + val;
 			} else {
 				// try to parse as a math expr
-				System.out.println("parsing as math expr");
 				String tmp = ParseMathExpr(val, blockVars);
 				if (!tmp.equals("")) {
 					char eqnType = tmp.charAt(0);
@@ -585,8 +604,16 @@ public class Interpreter {
 					} else {
 						globalVars.put(name, "double");
 					}
-					return name + " = " + val;
+					return name + " = " + tmp;
 				}
+
+				// try to parse as an equality expr
+				tmp = ParseEqualityExpr(val, blockVars);
+				if (!tmp.equals("")) {
+					globalVars.put(name, "boolean");
+					return name + " = " + tmp;
+				}
+
 				// error
 				System.out.println("SYNTAX ERROR: " + val + " is not a valid variable value");
 				Utils.PrintParseError(file, start, end, curLine, curLine + 1);
@@ -604,9 +631,54 @@ public class Interpreter {
 		return "";
 	}
 
+	public static String ParseEqualityExpr(String input, Map<String, String> blockVars) {
+		String[] operands;
+		String op;
+		if (input.contains("<=")) {
+			operands = input.split("<=");
+			op = "<=";
+		} else if (input.contains(">=")) {
+			operands = input.split(">=");
+			op = ">=";
+		} else if (input.contains("=")) {
+			operands = input.split("=");
+			op = "==";
+		} else if (input.contains("<")) {
+			operands = input.split("<");
+			op = "<";
+		} else if (input.contains(">")) {
+			operands = input.split(">");
+			op = ">";
+		} else {
+			// error no equality test
+			return "";
+		}
+
+		if (operands.length != 2) {
+			// error invalid input
+			return "";
+		}
+
+		String left = ParseMathExpr(operands[0], blockVars).substring(1);
+		String right = ParseMathExpr(operands[1], blockVars).substring(1);
+		if (left.equals("") || right.equals("")) {
+			// error parsing one side
+			return "";
+		}
+
+		// if we get here we're good
+		return left + op + right;
+	}
+
 	public static String ParseMathExpr(String input, Map<String, String> blockVars) {
-		System.out.println("parsing");
 		StringBuilder sb = new StringBuilder();
+		Pattern validate = Pattern.compile("^[\\(\\)\\+\\-\\*\\/%A-Za-z0-9]+$");
+		Matcher validateM = validate.matcher(input);
+		if (!validateM.matches()) {
+			// error non-mathematic characters present
+			return "";
+		}
+
 		Pattern p = Pattern.compile("\\(|\\)|\\+|-|\\*|\\/|%|[0-9]+|[A-Za-z0-9]+");
 		Matcher m = p.matcher(input);
 		Pattern atomPattern = Pattern.compile("^[0-9]+$|^[A-Za-z0-9]+$");
