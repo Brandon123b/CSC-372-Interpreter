@@ -161,7 +161,7 @@ public class Interpreter {
 	public static String GlobalVariables() {
 		StringBuilder sb = new StringBuilder();
 		for (var entry : globalVars.entrySet()) {
-			sb.append("\t").append(entry.getValue()).append(" ").append(entry.getKey()).append(";\n");
+			sb.append("\tstatic ").append(entry.getValue()).append(" ").append(entry.getKey()).append(";\n");
 		}
 		return sb.toString();
 	}
@@ -426,6 +426,15 @@ public class Interpreter {
 					try {
 						return name + " = " + Integer.parseInt(val);
 					} catch (Exception e) {
+						// try to parse as a math expr
+						String tmp = ParseMathExpr(val, blockVars);
+						if (!tmp.equals("")) {
+							char eqnType = tmp.charAt(0);
+							tmp = tmp.substring(1);
+							if (eqnType == 'i') {
+								return name + " = " + val;
+							}
+						}
 						// error
 						System.out.println("SYNTAX ERROR: variable " + name + " has already been defined as an int, but tried to assign a non-int value");
 						Utils.PrintParseError(file, start, end, curLine, curLine + 1);
@@ -435,6 +444,13 @@ public class Interpreter {
 					try {
 						return name + " = " + Double.parseDouble(val);
 					} catch (Exception e) {
+						// try to parse as a math expr
+						String tmp = ParseMathExpr(val, blockVars);
+						if (!tmp.equals("")) {
+							char eqnType = tmp.charAt(0);
+							tmp = tmp.substring(1);
+							return name + " = " + val;
+						}
 						// error
 						System.out.println("SYNTAX ERROR: variable " + name + " has already been defined as a double, but tried to assign a non-double value");
 						Utils.PrintParseError(file, start, end, curLine, curLine + 1);
@@ -466,6 +482,18 @@ public class Interpreter {
 				blockVars.put(name, "boolean");
 				return "boolean " + name + " = " + val;
 			} else {
+				// try to parse as a math expr
+				String tmp = ParseMathExpr(val, blockVars);
+				if (!tmp.equals("")) {
+					char eqnType = tmp.charAt(0);
+					tmp = tmp.substring(1);
+					if (eqnType == 'i') {
+						blockVars.put(name, "int");
+					} else {
+						blockVars.put(name, "double");
+					}
+					return name + " = " + val;
+				}
 				// error
 				System.out.println("SYNTAX ERROR: " + val + " is not a valid variable value");
 				Utils.PrintParseError(file, start, end, curLine, curLine + 1);
@@ -491,6 +519,15 @@ public class Interpreter {
 					try {
 						return name + " = " + Integer.parseInt(val);
 					} catch (Exception e) {
+						// try to parse as a math expr
+						String tmp = ParseMathExpr(val, blockVars);
+						if (!tmp.equals("")) {
+							char eqnType = tmp.charAt(0);
+							tmp = tmp.substring(1);
+							if (eqnType == 'i') {
+								return name + " = " + val;
+							}
+						}
 						// error
 						System.out.println("SYNTAX ERROR: variable " + name + " has already been defined as an int, but tried to assign a non-int value");
 						Utils.PrintParseError(file, start, end, curLine, curLine + 1);
@@ -500,6 +537,12 @@ public class Interpreter {
 					try {
 						return name + " = " + Double.parseDouble(val);
 					} catch (Exception e) {
+						// try to parse as a math expr
+						String tmp = ParseMathExpr(val, blockVars);
+						if (!tmp.equals("")) {
+							tmp = tmp.substring(1);
+							return name + " = " + val;
+						}
 						// error
 						System.out.println("SYNTAX ERROR: variable " + name + " has already been defined as a double, but tried to assign a non-double value");
 						Utils.PrintParseError(file, start, end, curLine, curLine + 1);
@@ -531,6 +574,19 @@ public class Interpreter {
 				globalVars.put(name, "boolean");
 				return name + " = " + val;
 			} else {
+				// try to parse as a math expr
+				System.out.println("parsing as math expr");
+				String tmp = ParseMathExpr(val, blockVars);
+				if (!tmp.equals("")) {
+					char eqnType = tmp.charAt(0);
+					tmp = tmp.substring(1);
+					if (eqnType == 'i') {
+						globalVars.put(name, "int");
+					} else {
+						globalVars.put(name, "double");
+					}
+					return name + " = " + val;
+				}
 				// error
 				System.out.println("SYNTAX ERROR: " + val + " is not a valid variable value");
 				Utils.PrintParseError(file, start, end, curLine, curLine + 1);
@@ -548,8 +604,73 @@ public class Interpreter {
 		return "";
 	}
 
-	public static String ParseMathExpr(String input) {
-		return "";
+	public static String ParseMathExpr(String input, Map<String, String> blockVars) {
+		System.out.println("parsing");
+		StringBuilder sb = new StringBuilder();
+		Pattern p = Pattern.compile("\\(|\\)|\\+|-|\\*|\\/|%|[0-9]+|[A-Za-z0-9]+");
+		Matcher m = p.matcher(input);
+		Pattern atomPattern = Pattern.compile("^[0-9]+$|^[A-Za-z0-9]+$");
+		Stack<Boolean> parens = new Stack<>();
+		String type = "i";
+		String prev = "";
+		boolean prevWasOp = false;
+
+		while(m.find()) {
+			if (prevWasOp) {
+				Matcher atom = atomPattern.matcher(m.group());
+				if (!atom.matches() && !m.group().equals("(")) {
+					// error illegal operator placement
+					return "";
+				}
+				prevWasOp = false;
+			}
+
+			if (m.group().equals("(")) {
+				parens.push(true);
+			} else if (m.group().equals(")")) {
+				if (parens.empty()) {
+					// error unbalanced parens
+					return "";
+				}
+				parens.pop();
+			} else if (Pattern.compile("[A-Za-z0-9]+").matcher(m.group()).matches()) {
+				// check var
+				if (globalVars.containsKey(m.group())) {
+					if (globalVars.get(m.group()).equals("int")) {
+						// nop
+					} else if (globalVars.get(m.group()).equals("double")) {
+						type = "d";
+					} else {
+						// error non-numeric variable
+						return "";
+					}
+				} else if (blockVars.containsKey(m.group())) {
+					if (blockVars.get(m.group()).equals("int")) {
+						// nop
+					} else if (globalVars.get(m.group()).equals("double")) {
+						type = "d";
+					} else {
+						// error non-numeric variable
+						return "";
+					}
+				}
+			} else if (Pattern.compile("[0-9]+").matcher(m.group()).matches()) {
+				// nothing to do
+			} else {
+				// operator -- make sure prev is an atom or close paren and next is an atom or open paren
+				Matcher atom = atomPattern.matcher(prev);
+				if (!atom.matches() && !prev.equals(")")) {
+					// error illegal operator placement
+					return "";
+				}
+				prevWasOp = true;
+			}
+
+			sb.append(m.group());
+			prev = m.group();
+		}
+
+		return type + sb.toString();
 	}
 
 	public static String ParseReturnStmt(String input) {
