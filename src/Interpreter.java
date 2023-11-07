@@ -82,7 +82,7 @@ public class Interpreter {
 		StringBuilder sb = new StringBuilder();
 
 		// Add the function declaration
-		sb.append("\tpublic static void " + function.name + "(" + HandleArgs(function.parameters) + "){\n\n");
+		sb.append("\tpublic void " + function.name + "(" + HandleArgs(function.parameters) + "){\n\n");
 
 		// Add the function body here
 		sb.append(function.body);
@@ -124,7 +124,7 @@ public class Interpreter {
 		sb.append("\t\t}\n");
 
 		sb.append("\t\ttry {\n");
-		sb.append("\t\t\t" + function.name + "(");
+		sb.append("\t\t\tcanvas." + function.name + "(");
 
 		boolean first = true;
 		for (int i = 0; i < function.parameters.size(); i++) {
@@ -162,7 +162,7 @@ public class Interpreter {
 	public static String GlobalVariables() {
 		StringBuilder sb = new StringBuilder();
 		for (Map.Entry entry : globalVars.entrySet()) {
-			sb.append("\tstatic ").append(entry.getValue()).append(" ").append(entry.getKey()).append(";\n");
+			sb.append("\t").append(entry.getValue()).append(" ").append(entry.getKey()).append(";\n");
 		}
 		return sb.toString();
 	}
