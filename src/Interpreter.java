@@ -324,7 +324,7 @@ public class Interpreter {
 			if (input.get(i).contains("\n")) {
 				curLine++;
 			}
-			String line = input.get(i).strip();
+			String line = input.get(i).trim();
 			if (line.equals("")) continue;
 
 			Matcher loopStart = loopStartPattern.matcher(line);
