@@ -82,7 +82,7 @@ public class Interpreter {
 		StringBuilder sb = new StringBuilder();
 
 		// Add the function declaration
-		sb.append("\tpublic void " + function.name + "(" + HandleArgs(function.parameters) + "){\n\n");
+		sb.append("\tpublic " + function.returnType + " " + function.name + "(" + HandleArgs(function.parameters) + "){\n\n");
 
 		// Add the function body here
 		sb.append(function.body);
@@ -206,9 +206,10 @@ public class Interpreter {
 			String name = matcher.group(2);
 			List<Arg> args = ParseArgs(matcher.group(3), lineNumber);
 
-			String body = ParseBlock(matcher.group(4), "\t\t", input, lineNumber, endLineNumber);
+			Function function = new Function(name, args, "", lineNumber);
+			String body = ParseBlock(matcher.group(4), "\t\t", input, lineNumber, endLineNumber, function);
+			function.body = body;
 
-			Function function = new Function(name, args, body, lineNumber);
 			functions.add(function);
 
             lastIndex = end;
@@ -303,7 +304,7 @@ public class Interpreter {
 	}
 
 	// Parse a block by matching expressions until either the block is empty or no match is found
-	public static String ParseBlock(String input, String indent, String file, int start, int end) {
+	public static String ParseBlock(String input, String indent, String file, int start, int end, Function fn) {
 		List<String> stmts = new ArrayList<>();
 		StringBuilder stmt = new StringBuilder();
 		boolean inString = false;
@@ -347,11 +348,11 @@ public class Interpreter {
 				stmt.append(input.charAt(i));
 			}
 		}
-		return ParseBlock(stmts, indent, file, start, end, new HashMap<>());
+		return ParseBlock(stmts, indent, file, start, end, new HashMap<>(), fn);
 	}
 
 	public static String ParseBlock(List<String> input, String indent, 
-		String file, int start, int end, Map<String, String> blockVars) {
+		String file, int start, int end, Map<String, String> blockVars, Function fn) {
 
 		StringBuilder sb = new StringBuilder();
 		Stack<String> nesting = new Stack<>();
@@ -366,7 +367,8 @@ public class Interpreter {
 		patterns.put("varSet",       Pattern.compile("^Set ([A-Za-z0-9]+) to (.+)"));
 		patterns.put("globalVarSet", Pattern.compile("^Set global ([A-Za-z0-9]+) to (.+)"));
 		patterns.put("functionCall", Pattern.compile("^Call the function (.+)"));
-		patterns.put("consoleWrite", Pattern.compile("^Print (.+) to the console"));
+		patterns.put("consoleWrite", Pattern.compile("^Print (.+) to the console$"));
+		patterns.put("returnStmt",   Pattern.compile("^Return (.+) to the caller$"));
 
 		int curLine = start;
 
@@ -427,6 +429,10 @@ public class Interpreter {
 				sb.append(indent + "System.out.println(" 
 					+ ParseConsoleWrite(matchers.get("consoleWrite").group(1), blockVars, file, start, end, curLine)
 					+ ");\n");
+			} else if (matchers.get("returnStmt").find()) {
+				sb.append(indent + "return "
+					+ ParseReturnStmt(matchers.get("returnStmt").group(1), blockVars, fn, file, start, end, curLine)
+					+ ";\n");
 			} else {
 				// error
 				System.out.println("SYNTAX ERROR: unrecognized statement " + line);
@@ -809,12 +815,63 @@ public class Interpreter {
 		}
 	}
 
-	public static String ParseReturnStmt(String input) {
-		return "";
+	public static String ParseReturnStmt(String input, Map<String, String> blockVars,
+		Function fn, String file, int start, int end, int curLine) {
+
+		String type;
+		String ret;
+
+		String tmpM = ParseMathExpr(input, blockVars);
+		String tmpE = ParseEvalExpr(input, blockVars);
+		
+		if (globalVars.containsKey(input)) {
+			type = globalVars.get(input);
+			ret = input;
+		} else if (blockVars.containsKey(input)) {
+			type = blockVars.get(input);
+			ret = input;
+		} else if (!tmpM.equals("")) {
+			type = tmpM.charAt(0) == 'i' ? "int" : "double";
+			ret = tmpM.substring(1);
+		} else if (!tmpE.equals("")) {
+			type = "boolean";
+			ret = tmpE;
+		} else if (Pattern.compile("[0-9]+").matcher(input).matches()) {
+			type = "int";
+			ret = input;
+		} else if (Pattern.compile("[0-9]+\\.[0-9]+").matcher(input).matches()) {
+			type = "double";
+			ret = input;
+		} else if (Pattern.compile("^\".*\"$").matcher(input).matches()) {
+			type = "String";
+			ret = input;
+		} else if (input.equals("true") || input.equals("false")) {
+			type = "boolean";
+			ret = input;
+		} else {
+			// error
+			System.out.println("SYNTAX ERROR: invalid expression in return statement");
+			Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+			return "";
+		}
+
+		if (fn.returnType.equals("void") || fn.returnType.equals(type)) {
+			fn.returnType = type;
+			return ret;
+		} else if (fn.returnType.equals("double") && type.equals("int")) {
+			return ret;
+		} else {
+			// error return type mismatch
+			System.out.println("SYNTAX ERROR: function return type has already been defined as " 
+				+ fn.returnType + ", but return statement received an incompatible value");
+			Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+			return "";
+		}
 	}
 
 	public static String ParseConsoleWrite(String input, Map<String, String> blockVars, 
 		String file, int start, int end, int curLine) {
+		
 		// try variable
 		if (globalVars.containsKey(input)) {
 			return input;
@@ -859,12 +916,14 @@ public class Interpreter {
 		public List<Arg> parameters;		// The parameters of the function
 		public String body;				// The body of the function
 		public int lineNumber;			// The line number of the function call 
+		public String returnType;
 
 		public Function(String name, List<Arg> parameters, String body, int lineNumber){
 			this.name = name;
 			this.parameters = parameters;
 			this.body = body;
 			this.lineNumber = lineNumber;
+			this.returnType = "void";
 		}
 
 		public void Print(){
