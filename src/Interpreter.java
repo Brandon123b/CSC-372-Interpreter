@@ -379,7 +379,7 @@ public class Interpreter {
 
 			if (matchers.get("loopStart").find()) {
 				nesting.push("while");
-				sb.append(indent + "while (" + ParseEvalExpr(matchers.get("loopStart").group(1)) + ") {\n");
+				sb.append(indent + "while (" + ParseEvalExpr(matchers.get("loopStart").group(1), blockVars) + ") {\n");
 				indent += "\t";
 			} else if (matchers.get("loopEnd").find()) {
 				if (nesting.empty() || !nesting.pop().equals("while")) {
@@ -392,7 +392,7 @@ public class Interpreter {
 				sb.append(indent + "}\n");
 			} else if (matchers.get("condStart").find()) {
 				nesting.push("if");
-				sb.append(indent + "if (" + ParseEvalExpr(matchers.get("condStart").group(1)) + ") {\n");
+				sb.append(indent + "if (" + ParseEvalExpr(matchers.get("condStart").group(1), blockVars) + ") {\n");
 				indent += "\t";
 			} else if (matchers.get("condEnd").find()) {
 				if (nesting.empty() || !nesting.pop().equals("if")) {
@@ -452,6 +452,7 @@ public class Interpreter {
 
 		String math = ParseMathExpr(val, blockVars);
 		String equality = ParseEqualityExpr(val, blockVars);
+		String eval = ParseEvalExpr(val, blockVars);
 
 		if (type.equals("")) {
 			if (Pattern.compile("^\".*\"$").matcher(val).matches()) {
@@ -494,6 +495,17 @@ public class Interpreter {
 				} else {
 					blockVars.put(name, "boolean");
 					return "boolean " + name + " = " + equality;
+				}
+			}
+
+			// try to parse as an eval expr
+			if (!eval.equals("")) {
+				if (global) {
+					globalVars.put(name, "boolean");
+					return name + " = " + eval;
+				} else {
+					blockVars.put(name, "boolean");
+					return "boolean " + name + " = " + eval;
 				}
 			}
 
@@ -550,6 +562,10 @@ public class Interpreter {
 					if (!equality.equals("")) {
 						return name + " = " + equality;
 					}
+					// try to parse as an eval expr
+					if (!eval.equals("")) {
+						return name + " = " + eval;
+					}
 					// error
 					System.out.println("SYNTAX ERROR: variable " + name 
 						+ " has already been defined as a boolean but tried to assign a non-boolean value");
@@ -577,12 +593,14 @@ public class Interpreter {
 		for (int i = 0; i < tokens.length; i++) {
 			if (tokens[i].equals("(")) {
 				parens.push(true);
+				sb.append("(");
 			} else if (tokens[i].equals(")")) {
 				if (parens.empty()) {
 					// error unbalanced parens
 					return "";
 				}
 				parens.pop();
+				sb.append(")");
 			} else if (tokens[i].equals("and") || tokens[i].equals("or")) {
 				if (i <= 0 || i + 1 >= tokens.length 
 				|| tokens[i - 1].equals("and") || tokens[i - 1].equals("or") || tokens[i - 1].equals("not")
@@ -615,16 +633,19 @@ public class Interpreter {
 
 				// check var
 				String varType = "";
-				if (globalVars.containsKey(m.group())) {
-					varType = globalVars.get(m.group());
-				} else if (blockVars.containsKey(m.group())) {
-					varType = globalVars.get(m.group());
+				String t = tokens[i].trim();
+				if (globalVars.containsKey(t)) {
+					varType = globalVars.get(t);
+				} else if (blockVars.containsKey(t)) {
+					varType = globalVars.get(t);
 				}
 
 				if (!varType.equals("boolean")) {
 					// error non-boolean variable
 					return "";
 				}
+
+				sb.append(t);
 			} else {
 				String tmp = ParseEqualityExpr(tokens[i], blockVars);
 				if (tmp.equals("")) {
@@ -664,15 +685,40 @@ public class Interpreter {
 			return "";
 		}
 
-		String left = ParseMathExpr(operands[0], blockVars);
-		String right = ParseMathExpr(operands[1], blockVars);
+		String left, right;
+
+		Pattern p = Pattern.compile("^\s*[A-Za-z0-9]+\s*$");
+		Matcher m = p.matcher(operands[0]);
+		if (m.matches() 
+			&& (globalVars.containsKey(operands[0].trim()) || blockVars.containsKey(operands[0].trim()))) {
+			
+			left = operands[0].trim();
+		} else {
+			left = ParseMathExpr(operands[0], blockVars);
+			if (!left.equals("")) {
+				left = left.substring(1);
+			}
+		}
+
+		m = p.matcher(operands[1]);
+		if (m.matches() 
+			&& (globalVars.containsKey(operands[1].trim()) || blockVars.containsKey(operands[1].trim()))) {
+			
+			right = operands[1].trim();
+		} else {
+			right = ParseMathExpr(operands[1], blockVars);
+			if (!right.equals("")) {
+				right = right.substring(1);
+			}
+		}
+
 		if (left.equals("") || right.equals("")) {
 			// error parsing one side
 			return "";
 		}
 
 		// if we get here we're good
-		return left.substring(1) + op + right.substring(1);
+		return left + op + right;
 	}
 
 	public static String ParseMathExpr(String input, Map<String, String> blockVars) {
