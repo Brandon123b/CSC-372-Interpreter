@@ -453,24 +453,36 @@ public class Interpreter {
 			}
 
 			if (!type.equals("")) {
-				if (global) globalVars.put(name, type);
-				else blockVars.put(name, type);
-				return type + " " + name + " = " + val;
+				if (global) {
+					globalVars.put(name, type);
+					return name + " = " + val;
+				} else {
+					blockVars.put(name, type);
+					return type + " " + name + " = " + val;
+				}
 			}
 
 			// try to parse as a math expr
 			if (!math.equals("")) {
 				type = math.charAt(0) == 'i' ? "int" : "double";
-				if (global) globalVars.put(name, type);
-				else blockVars.put(name, type);
-				return type + " " + name + " = " + math.substring(1);
+				if (global) {
+					globalVars.put(name, type);
+					return name + " = " + math.substring(1);
+				} else {
+					blockVars.put(name, type);
+					return type + " " + name + " = " + math.substring(1);
+				}
 			}
 
 			// try to parse as an equality expr
 			if (!equality.equals("")) {
-				if (global) globalVars.put(name, "boolean");
-				else blockVars.put(name, "boolean");
-				return "boolean " + name + " = " + equality;
+				if (global) {
+					globalVars.put(name, "boolean");
+					return name + " = " + equality;
+				} else {
+					blockVars.put(name, "boolean");
+					return "boolean " + name + " = " + equality;
+				}
 			}
 
 			// error
