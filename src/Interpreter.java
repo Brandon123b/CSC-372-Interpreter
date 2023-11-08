@@ -352,6 +352,7 @@ public class Interpreter {
 
 	public static String ParseBlock(List<String> input, String indent, 
 		String file, int start, int end, Map<String, String> blockVars) {
+
 		StringBuilder sb = new StringBuilder();
 		Stack<String> nesting = new Stack<>();
 
@@ -365,6 +366,7 @@ public class Interpreter {
 		patterns.put("varSet",       Pattern.compile("^Set ([A-Za-z0-9]+) to (.+)"));
 		patterns.put("globalVarSet", Pattern.compile("^Set global ([A-Za-z0-9]+) to (.+)"));
 		patterns.put("functionCall", Pattern.compile("^Call the function (.+)"));
+		patterns.put("consoleWrite", Pattern.compile("^Print (.+) to the console"));
 
 		int curLine = start;
 
@@ -421,6 +423,10 @@ public class Interpreter {
 				}
 			} else if (matchers.get("functionCall").find()) {
 				sb.append(indent + ParseFunctionCall(line) + "\n");
+			} else if (matchers.get("consoleWrite").find()) {
+				sb.append(indent + "System.out.println(" 
+					+ ParseConsoleWrite(matchers.get("consoleWrite").group(1), blockVars, file, start, end, curLine)
+					+ ");\n");
 			} else {
 				// error
 				System.out.println("SYNTAX ERROR: unrecognized statement " + line);
@@ -591,7 +597,9 @@ public class Interpreter {
 		boolean prevWasOp = false;
 
 		for (int i = 0; i < tokens.length; i++) {
-			if (tokens[i].equals("(")) {
+			if (Pattern.compile("\\s").matcher(tokens[i]).matches()) {
+				continue;
+			} else if (tokens[i].equals("(")) {
 				parens.push(true);
 				sb.append("(");
 			} else if (tokens[i].equals(")")) {
@@ -626,9 +634,11 @@ public class Interpreter {
 				sb.append("!");
 			} else if (Pattern.compile("^\s*[A-Za-z0-9]+\s*$").matcher(tokens[i]).matches()) {
 				if (tokens[i].contains("true")) {
-					sb.append(" true ");
+					sb.append("true ");
+					continue;
 				} else if (tokens[i].contains("false")) {
-					sb.append(" false ");
+					sb.append("false ");
+					continue;
 				}
 
 				// check var
@@ -640,7 +650,7 @@ public class Interpreter {
 					varType = globalVars.get(t);
 				}
 
-				if (!varType.equals("boolean")) {
+				if (!varType.equals("") && !varType.equals("boolean")) {
 					// error non-boolean variable
 					return "";
 				}
@@ -800,6 +810,42 @@ public class Interpreter {
 	}
 
 	public static String ParseReturnStmt(String input) {
+		return "";
+	}
+
+	public static String ParseConsoleWrite(String input, Map<String, String> blockVars, 
+		String file, int start, int end, int curLine) {
+		// try variable
+		if (globalVars.containsKey(input)) {
+			return input;
+		} else if (blockVars.containsKey(input)) {
+			return input;
+		}
+
+		// try math expr
+		String tmp = ParseMathExpr(input, blockVars);
+		if (!tmp.equals("")) {
+			return tmp.substring(1);
+		}
+
+		// try boolean expr
+		tmp = ParseEvalExpr(input, blockVars);
+		if (!tmp.equals("")) {
+			return tmp;
+		}
+
+		// try value
+		if (Pattern.compile("[0-9]+").matcher(input).matches()
+			|| Pattern.compile("[0-9]+\\.[0-9]+").matcher(input).matches()
+			|| Pattern.compile("^\".*\"$").matcher(input).matches()
+			|| input.equals("true") || input.equals("false")) {
+
+			return input;
+		}
+
+		// error
+		System.out.println("SYNTAX ERROR: invalid expression in print statement");
+		Utils.PrintParseError(file, start, end, curLine, curLine + 1);
 		return "";
 	}
 	
