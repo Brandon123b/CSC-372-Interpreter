@@ -567,8 +567,80 @@ public class Interpreter {
 		return "";
 	}
 
-	public static String ParseEvalExpr(String input) {
-		return "";
+	public static String ParseEvalExpr(String input, Map<String, String> blockVars) {
+		StringBuilder sb = new StringBuilder();
+		String[] tokens = input.split("((?<=\\(|\\)|\\band|\\bor|\\bnot)|(?=\\(|\\)|\\band|\\bor|\\bnot))");
+		Stack<Boolean> parens = new Stack<>();
+		String prev = "";
+		boolean prevWasOp = false;
+
+		for (int i = 0; i < tokens.length; i++) {
+			if (tokens[i].equals("(")) {
+				parens.push(true);
+			} else if (tokens[i].equals(")")) {
+				if (parens.empty()) {
+					// error unbalanced parens
+					return "";
+				}
+				parens.pop();
+			} else if (tokens[i].equals("and") || tokens[i].equals("or")) {
+				if (i <= 0 || i + 1 >= tokens.length 
+				|| tokens[i - 1].equals("and") || tokens[i - 1].equals("or") || tokens[i - 1].equals("not")
+				|| tokens[i + 1].equals("and") || tokens[i + 1].equals("or")) {
+
+					// error invalid operands to binary op
+					return "";
+				}
+
+				if (tokens[i].equals("and")) {
+					sb.append("&&");
+				} else {
+					sb.append("||");
+				}
+			} else if (tokens[i].equals("not")) {
+				if (i + 1 >= tokens.length || tokens[i + 1].equals("and") || tokens[i + 1].equals("or")
+					|| tokens[i + 1].equals("not")) {
+					
+					// error invalid operand to unary op
+					return "";
+				}
+
+				sb.append("!");
+			} else if (Pattern.compile("^\s*[A-Za-z0-9]+\s*$").matcher(tokens[i]).matches()) {
+				if (tokens[i].contains("true")) {
+					sb.append(" true ");
+				} else if (tokens[i].contains("false")) {
+					sb.append(" false ");
+				}
+
+				// check var
+				String varType = "";
+				if (globalVars.containsKey(m.group())) {
+					varType = globalVars.get(m.group());
+				} else if (blockVars.containsKey(m.group())) {
+					varType = globalVars.get(m.group());
+				}
+
+				if (!varType.equals("boolean")) {
+					// error non-boolean variable
+					return "";
+				}
+			} else {
+				String tmp = ParseEqualityExpr(tokens[i], blockVars);
+				if (tmp.equals("")) {
+					// error token not evaluatable as boolean
+					return "";
+				}
+				sb.append(tmp);
+			}
+		}
+
+		if (parens.empty()) {
+			return sb.toString();
+		} else {
+			// error unbalanced parens
+			return "";
+		}
 	}
 
 	public static String ParseEqualityExpr(String input, Map<String, String> blockVars) {
@@ -673,7 +745,12 @@ public class Interpreter {
 			prev = m.group();
 		}
 
-		return type + sb.toString();
+		if (parens.empty()) {
+			return type + sb.toString();
+		} else {
+			// error unbalanced parens
+			return "";
+		}
 	}
 
 	public static String ParseReturnStmt(String input) {
