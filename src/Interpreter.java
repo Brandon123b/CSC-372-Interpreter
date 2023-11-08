@@ -307,31 +307,43 @@ public class Interpreter {
 		List<String> stmts = new ArrayList<>();
 		StringBuilder stmt = new StringBuilder();
 		boolean inString = false;
+		boolean inLineComment = false;
+		boolean inBlockComment = false;
 		for (int i = 0; i < input.length(); i++) {
 			if (input.charAt(i) == '"') {
 				inString = !inString;
 			}
 
-			if (input.charAt(i) == '.') {
-				if (inString 
-					|| (i > 0 && Character.isDigit(input.charAt(i-1)) 
-					&& i + 1 < input.length() && Character.isDigit(input.charAt(i+1)))) {
-					
-					// retain '.' char in string and double
-					stmt.append('.');
-				} else {
-					stmts.add(stmt.toString());
-					stmt = new StringBuilder();
+			if (inString) {
+				stmt.append(input.charAt(i));
+				continue;
+			}
+
+			if ((input.charAt(i) == '.' && (i <= 0 || !Character.isDigit(input.charAt(i - 1)) 
+				|| i + 1 >= input.length() || !Character.isDigit(input.charAt(i + 1))))
+			 	|| input.charAt(i) == ':') {
+				
+				stmts.add(stmt.toString());
+				stmt = new StringBuilder();
+				continue;
+			}
+			
+			if (input.charAt(i) == '/') {
+				if (!inBlockComment && i + 1 < input.length() && input.charAt(i + 1) == '*') {
+					inBlockComment = true;
+				} else if (inBlockComment && i > 0 && input.charAt(i - 1) == '*') {
+					inBlockComment = false;
+					continue;
 				}
-			} else if (input.charAt(i) == ':') {
-				if (inString) {
-					// retain ':' char in string
-					stmt.append(':');
-				} else {
-					stmts.add(stmt.toString());
-					stmt = new StringBuilder();
-				}
-			} else {
+			}
+			
+			if (input.charAt(i) == '#') {
+				inLineComment = true;
+			} else if (!inString && input.charAt(i) == '\n' && inLineComment) {
+				inLineComment = false;
+			}
+			
+			if ((!inLineComment && !inBlockComment) || input.charAt(i) == '\n') {
 				stmt.append(input.charAt(i));
 			}
 		}
