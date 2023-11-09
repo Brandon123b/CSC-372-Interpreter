@@ -454,141 +454,37 @@ public class Interpreter {
 
 	public static String ParseVarSet(String name, String val, boolean global, 
 		Map<String, String> blockVars, String file, int start, int end, int curLine) {
-		
-		String type = "";
-		if (globalVars.containsKey(name)) {
-			type = globalVars.get(name);
-		} else if (!global && blockVars.containsKey(name)) {
-			type = blockVars.get(name);
-		}
 
-		String math = ParseMathExpr(val, blockVars);
-		String equality = ParseEqualityExpr(val, blockVars);
-		String eval = ParseEvalExpr(val, blockVars);
-
-		if (type.equals("")) {
-			if (Pattern.compile("^\".*\"$").matcher(val).matches()) {
-				type = "String";
-			} else if (Pattern.compile("^[0-9]+$").matcher(val).matches()) {
-				type = "int";
-			} else if (Pattern.compile("^[0-9]+\\.[0-9]+$").matcher(val).matches()) {
-				type = "double";
-			} else if (val.equals("true") || val.equals("false")) {
-				type = "boolean";
-			}
-
-			if (!type.equals("")) {
-				if (global) {
-					globalVars.put(name, type);
-					return name + " = " + val;
-				} else {
-					blockVars.put(name, type);
-					return type + " " + name + " = " + val;
-				}
-			}
-
-			// try to parse as a math expr
-			if (!math.equals("")) {
-				type = math.charAt(0) == 'i' ? "int" : "double";
-				if (global) {
-					globalVars.put(name, type);
-					return name + " = " + math.substring(1);
-				} else {
-					blockVars.put(name, type);
-					return type + " " + name + " = " + math.substring(1);
-				}
-			}
-
-			// try to parse as an equality expr
-			if (!equality.equals("")) {
-				if (global) {
-					globalVars.put(name, "boolean");
-					return name + " = " + equality;
-				} else {
-					blockVars.put(name, "boolean");
-					return "boolean " + name + " = " + equality;
-				}
-			}
-
-			// try to parse as an eval expr
-			if (!eval.equals("")) {
-				if (global) {
-					globalVars.put(name, "boolean");
-					return name + " = " + eval;
-				} else {
-					blockVars.put(name, "boolean");
-					return "boolean " + name + " = " + eval;
-				}
-			}
-
+		String[] valParsed = ParseExpression(val, blockVars);
+		if (valParsed[0].equals("")) {
 			// error
-			System.out.println("SYNTAX ERROR: " + val + " is not a valid variable value");
+			System.out.println("SYNTAX ERROR: unable to parse expression " + val);
 			Utils.PrintParseError(file, start, end, curLine, curLine + 1);
 			return "";
 		}
-
-		switch(type) {
-			case "String":
-				if (Pattern.compile("^\".*\"$").matcher(val).matches()) {
-					return name + " = " + val;
-				} else {
-					// error
-					System.out.println("SYNTAX ERROR: variable " + name 
-						+ " has already been defined as a string, but tried to assign a non-string value");
-					Utils.PrintParseError(file, start, end, curLine, curLine + 1);
-				}
-				break;
-			case "int":
-				try {
-					return name + " = " + Integer.parseInt(val);
-				} catch (Exception e) {
-					// try to parse as a math expr
-					if (!math.equals("") && math.charAt(0) == 'i') {
-						return name + " = " + math.substring(1);
-					}
-					// error
-					System.out.println("SYNTAX ERROR: variable " + name 
-						+ " has already been defined as an int, but tried to assign a non-int value");
-					Utils.PrintParseError(file, start, end, curLine, curLine + 1);
-				}
-				break;
-			case "double":
-				try {
-					return name + " = " + Double.parseDouble(val);
-				} catch (Exception e) {
-					// try to parse as a math expr
-					if (!math.equals("")) {
-						return name + " = " + math.substring(1);
-					}
-					// error
-					System.out.println("SYNTAX ERROR: variable " + name 
-						+ " has already been defined as a double, but tried to assign a non-double value");
-					Utils.PrintParseError(file, start, end, curLine, curLine + 1);
-				}
-				break;
-			case "boolean":
-				if (val.equals("true") || val.equals("false")) {
-					return name + " = " + val;
-				} else {
-					// try to parse as an equality expr
-					if (!equality.equals("")) {
-						return name + " = " + equality;
-					}
-					// try to parse as an eval expr
-					if (!eval.equals("")) {
-						return name + " = " + eval;
-					}
-					// error
-					System.out.println("SYNTAX ERROR: variable " + name 
-						+ " has already been defined as a boolean but tried to assign a non-boolean value");
-					Utils.PrintParseError(file, start, end, curLine, curLine + 1);
-				}
-				break;
-			default:
-				System.out.println("if you see this, there's a bug in Interpreter.java :(");
+		
+		String type = "";
+		if (blockVars.containsKey(name)) {
+			type = blockVars.get(name);
+		} else if (globalVars.containsKey(name)) {
+			type = globalVars.get(name);
 		}
 
-		return "";
+		if (type.equals("") && global) {
+			globalVars.put(name, valParsed[0]);
+			return name + " = " + valParsed[1];
+		} else if (type.equals("")) {
+			blockVars.put(name, valParsed[0]);
+			return valParsed[0] + " " + name + " = " + valParsed[1];
+		} else if (type.equals(valParsed[0])) {
+			return name + " = " + valParsed[1];
+		} else {
+			// error
+			System.out.println("SYNTAX ERROR: type mismatch: " + name + " is defined as type "
+				+ type + ", but " + valParsed[1] + " is type " + valParsed[0]);
+			Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+			return "";
+		}
 	}
 
 	public static String ParseFunctionCall(String input) {
@@ -638,37 +534,20 @@ public class Interpreter {
 				}
 
 				sb.append("!");
-			} else if (Pattern.compile("^\s*[A-Za-z0-9]+\s*$").matcher(tokens[i]).matches()) {
-				if (tokens[i].contains("true")) {
-					sb.append("true ");
-					continue;
-				} else if (tokens[i].contains("false")) {
-					sb.append("false ");
-					continue;
-				}
-
-				// check var
-				String varType = "";
-				String t = tokens[i].trim();
-				if (globalVars.containsKey(t)) {
-					varType = globalVars.get(t);
-				} else if (blockVars.containsKey(t)) {
-					varType = globalVars.get(t);
-				}
-
-				if (!varType.equals("") && !varType.equals("boolean")) {
-					// error non-boolean variable
-					return "";
-				}
-
-				sb.append(t);
 			} else {
-				String tmp = ParseEqualityExpr(tokens[i], blockVars);
-				if (tmp.equals("")) {
-					// error token not evaluatable as boolean
+				String[] var = CheckVariable(tokens[i], blockVars);
+				String[] val = ParseValue(tokens[i]);
+				String eq = ParseEqualityExpr(tokens[i], blockVars);
+				if (var[0].equals("boolean")) {
+					sb.append(var[1]);
+				} else if (val[0].equals("boolean")) {
+					sb.append(val[1]);
+				} else if (!eq.equals("")) {
+					sb.append(eq);
+				} else {
+					// not a boolean
 					return "";
 				}
-				sb.append(tmp);
 			}
 		}
 
@@ -701,65 +580,45 @@ public class Interpreter {
 			return "";
 		}
 
-		String left, right;
+		String[] left = ParseExpression(operands[0].trim(), blockVars);
+		String[] right = ParseExpression(operands[1].trim(), blockVars);
 
-		Pattern p = Pattern.compile("^\s*[A-Za-z0-9]+\s*$");
-		Matcher m = p.matcher(operands[0]);
-		if (m.matches() 
-			&& (globalVars.containsKey(operands[0].trim()) || blockVars.containsKey(operands[0].trim()))) {
-			
-			left = operands[0].trim();
-		} else {
-			left = ParseMathExpr(operands[0], blockVars);
-			if (!left.equals("")) {
-				left = left.substring(1);
-			}
-		}
-
-		m = p.matcher(operands[1]);
-		if (m.matches() 
-			&& (globalVars.containsKey(operands[1].trim()) || blockVars.containsKey(operands[1].trim()))) {
-			
-			right = operands[1].trim();
-		} else {
-			right = ParseMathExpr(operands[1], blockVars);
-			if (!right.equals("")) {
-				right = right.substring(1);
-			}
-		}
-
-		if (left.equals("") || right.equals("")) {
+		if (left[0].equals("") || right[0].equals("")) {
 			// error parsing one side
 			return "";
 		}
 
 		// if we get here we're good
-		return left + op + right;
+		return left[1] + op + right[1];
 	}
 
-	public static String ParseMathExpr(String input, Map<String, String> blockVars) {
+	public static String[] ParseMathExpr(String input, Map<String, String> blockVars) {
 		StringBuilder sb = new StringBuilder();
 		Pattern validate = Pattern.compile("^[()+\\-*/%A-Za-z0-9\s]+$");
 		Matcher validateM = validate.matcher(input);
 		if (!validateM.matches()) {
 			// error non-mathematic characters present
-			return "";
+			return new String[]{"", ""};
 		}
 
 		Pattern p = Pattern.compile("\\(|\\)|\\+|-|\\*|\\/|%|[0-9]+|[A-Za-z0-9]+|[0-9]+\\.[0-9]+");
 		Matcher m = p.matcher(input);
 		Pattern atomPattern = Pattern.compile("^[0-9]+$|^[A-Za-z0-9]+$|^[0-9]\\.[0-9]$");
 		Stack<Boolean> parens = new Stack<>();
-		String type = "i";
+		String type = "int";
 		String prev = "";
 		boolean prevWasOp = false;
+		String[] var;
+		String[] val;
 
 		while(m.find()) {
+			var = CheckVariable(m.group(), blockVars);
+			val = ParseValue(m.group());
 			if (prevWasOp) {
 				Matcher atom = atomPattern.matcher(m.group());
-				if (!atom.matches() && !m.group().equals("(")) {
+				if (var[0].equals("") && val[0].equals("") && !m.group().equals("(")) {
 					// error illegal operator placement
-					return "";
+					return new String[]{"", ""};
 				}
 				prevWasOp = false;
 			}
@@ -769,36 +628,22 @@ public class Interpreter {
 			} else if (m.group().equals(")")) {
 				if (parens.empty()) {
 					// error unbalanced parens
-					return "";
+					return new String[]{"", ""};
 				}
 				parens.pop();
-			} else if (Pattern.compile("^[0-9]+$").matcher(m.group()).matches()) {
-				// nothing to do
-			} else if (Pattern.compile("^[0-9]+\\.[0-9]+$").matcher(m.group()).matches()) {
-				type = "d";
-			} else if (Pattern.compile("^[A-Za-z0-9]+$").matcher(m.group()).matches()) {
-				// check var
-				String varType = "";
-				if (globalVars.containsKey(m.group())) {
-					varType = globalVars.get(m.group());
-				} else if (blockVars.containsKey(m.group())) {
-					varType = globalVars.get(m.group());
-				}
-
-				if (varType.equals("int")) {
-					// nop
-				} else if (varType.equals("double")) {
-					type = "d";
-				} else {
-					// error non-numeric variable
-					return "";
-				}
+			} else if (var[0].equals("int") || val[0].equals("int")) {
+				// nop
+			} else if (var[0].equals("double") || val[0].equals("double")) {
+				type = "double";
+			} else if (!var[0].equals("") && !val[0].equals("")) {
+				// error non-numeric value
+				return new String[]{"", ""};
 			} else {
 				// operator -- make sure prev is an atom or close paren and next is an atom or open paren
 				Matcher atom = atomPattern.matcher(prev);
 				if (!atom.matches() && !prev.equals(")")) {
 					// error illegal operator placement
-					return "";
+					return new String[]{"", ""};
 				}
 				prevWasOp = true;
 			}
@@ -808,58 +653,30 @@ public class Interpreter {
 		}
 
 		if (parens.empty()) {
-			return type + sb.toString();
+			return new String[]{type, sb.toString()};
 		} else {
 			// error unbalanced parens
-			return "";
+			return new String[]{"", ""};
 		}
 	}
 
 	public static String ParseReturnStmt(String input, Map<String, String> blockVars,
 		Function fn, String file, int start, int end, int curLine) {
 
-		String type;
-		String ret;
-
-		String tmpM = ParseMathExpr(input, blockVars);
-		String tmpE = ParseEvalExpr(input, blockVars);
+		String[] parsed = ParseExpression(input, blockVars);
 		
-		if (globalVars.containsKey(input)) {
-			type = globalVars.get(input);
-			ret = input;
-		} else if (blockVars.containsKey(input)) {
-			type = blockVars.get(input);
-			ret = input;
-		} else if (!tmpM.equals("")) {
-			type = tmpM.charAt(0) == 'i' ? "int" : "double";
-			ret = tmpM.substring(1);
-		} else if (!tmpE.equals("")) {
-			type = "boolean";
-			ret = tmpE;
-		} else if (Pattern.compile("[0-9]+").matcher(input).matches()) {
-			type = "int";
-			ret = input;
-		} else if (Pattern.compile("[0-9]+\\.[0-9]+").matcher(input).matches()) {
-			type = "double";
-			ret = input;
-		} else if (Pattern.compile("^\".*\"$").matcher(input).matches()) {
-			type = "String";
-			ret = input;
-		} else if (input.equals("true") || input.equals("false")) {
-			type = "boolean";
-			ret = input;
-		} else {
+		if (parsed[0].equals("")) {
 			// error
 			System.out.println("SYNTAX ERROR: invalid expression in return statement");
 			Utils.PrintParseError(file, start, end, curLine, curLine + 1);
 			return "";
 		}
 
-		if (fn.returnType.equals("void") || fn.returnType.equals(type)) {
-			fn.returnType = type;
-			return ret;
-		} else if (fn.returnType.equals("double") && type.equals("int")) {
-			return ret;
+		if (fn.returnType.equals("void") || fn.returnType.equals(parsed[0])) {
+			fn.returnType = parsed[0];
+			return parsed[1];
+		} else if (fn.returnType.equals("double") && parsed[0].equals("int")) {
+			return parsed[1];
 		} else {
 			// error return type mismatch
 			System.out.println("SYNTAX ERROR: function return type has already been defined as " 
@@ -872,38 +689,69 @@ public class Interpreter {
 	public static String ParseConsoleWrite(String input, Map<String, String> blockVars, 
 		String file, int start, int end, int curLine) {
 		
-		// try variable
+		String[] parsed = ParseExpression(input, blockVars);
+		
+		if (parsed[0].equals("")) {
+			// error
+			System.out.println("SYNTAX ERROR: invalid expression in print statement");
+			Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+			return "";
+		} else {
+			return parsed[1];
+		}
+	}
+
+	public static String[] ParseExpression(String input, Map<String, String> blockVars) {
+		input = input.trim();
+		String[] ret = new String[]{"", ""};
+
+		String[] var = CheckVariable(input, blockVars);
+		String[] math = ParseMathExpr(input, blockVars);
+		String eval = ParseEvalExpr(input, blockVars);
+		String[] val = ParseValue(input);
+		
+		if (!var[0].equals("")) {
+			ret = var;
+		} else if (!math[0].equals("")) {
+			ret = math;
+		} else if (!eval.equals("")) {
+			ret[0] = "boolean";
+			ret[1] = eval;
+		} else if (!val[0].equals("")) {
+			ret = val;
+		}
+
+		return ret;
+	}
+
+	public static String[] CheckVariable(String input, Map<String, String> blockVars) {
+		input = input.trim();
+		String[] ret = new String[]{"", ""};
 		if (globalVars.containsKey(input)) {
-			return input;
+			ret[0] = globalVars.get(input);
+			ret[1] = input;
 		} else if (blockVars.containsKey(input)) {
-			return input;
+			ret[0] = blockVars.get(input);
+			ret[1] = input;
 		}
+		return ret;
+	}
 
-		// try math expr
-		String tmp = ParseMathExpr(input, blockVars);
-		if (!tmp.equals("")) {
-			return tmp.substring(1);
+	public static String[] ParseValue(String input) {
+		input = input.trim();
+		String[] ret = new String[]{"", input};
+		if (Pattern.compile("[0-9]+").matcher(input).matches()) {
+			ret[0] = "int";
+		} else if (Pattern.compile("[0-9]+\\.[0-9]+").matcher(input).matches()) {
+			ret[0] = "double";
+		} else if (Pattern.compile("^\".*\"$").matcher(input).matches()) {
+			ret[0] = "String";
+		} else if (input.equals("true") || input.equals("false")) {
+			ret[0] = "boolean";
+		} else {
+			ret[1] = "";
 		}
-
-		// try boolean expr
-		tmp = ParseEvalExpr(input, blockVars);
-		if (!tmp.equals("")) {
-			return tmp;
-		}
-
-		// try value
-		if (Pattern.compile("[0-9]+").matcher(input).matches()
-			|| Pattern.compile("[0-9]+\\.[0-9]+").matcher(input).matches()
-			|| Pattern.compile("^\".*\"$").matcher(input).matches()
-			|| input.equals("true") || input.equals("false")) {
-
-			return input;
-		}
-
-		// error
-		System.out.println("SYNTAX ERROR: invalid expression in print statement");
-		Utils.PrintParseError(file, start, end, curLine, curLine + 1);
-		return "";
+		return ret;
 	}
 	
 	/* -------------------------------------------------------------------------- */
