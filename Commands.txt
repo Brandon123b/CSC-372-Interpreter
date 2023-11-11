@@ -39,13 +39,26 @@ Function:
 	Ex: "Begin a function called Foo with type int called Pie, type bool called Hello, and type string called Str.
 
 GUI:
-	Create a Box called <Var>						# Same for Circle, line, and text
-	Move <Var> to <expr> and <expr> 				# x and y pos
-	Set the size of Circle <Var> to <expr>			# Radius
+	Create a [global] <GUI Object> called <Var>.	# Same for Circle, line, and text
+	Move <Var> to <expr> and <expr>.				# x and y pos
+	Remove <var> from the canvas.					# All GUI objects are auto added. This is to remove them.
+	Set the color of <Var> to (r, g, b, a).			# Specify color
+	If <Var> is clicked call function <function>	# Lets do Events! (Unfinished)
+
+	// Circle
+	Set the radius of Circle <Var> to <expr>		# Radius
+
+	// Box
 	Set the size of Box <Var> to <expr> and <expr>	# Width, height
-	Set the color of <Var> to <Color>				# Hex or some premade colors?
-	If <Box> is clicked call function <function>	# Lets do Evenets!
-	Remove <var> from the canvas.					# Boxes are auto added, but may be removed
+
+	// Line
+	Set the chords of <Var> to (<expr>, <expr>) and (<expr>, <expr>).
+	Set the size of <Var> to <expr>.				# Thickness
+
+	// Text
+	Set the text of <Var> to <expr>.				# Text
+	Set the size of <Var> to <expr>.				# Font size
+	
 
 	Built in function "Gameloop" that is automatically called every frame (60fps?)
 	This is optional, but important to allow movement in the GUI, so adding
