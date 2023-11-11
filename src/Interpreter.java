@@ -781,12 +781,23 @@ public class Interpreter {
 	/* ----------------------------- GUI Statements ----------------------------- */
 	
 	static Pattern patternStmtCreate = Pattern.compile("^Create a (.+) called (.+)$");
+	static Pattern patternStmtCreateGlobal = Pattern.compile("^Create a global (.+) called (.+)$");
 	static Pattern patternStmtMove = Pattern.compile("^Move (.+) to (.+) and (.+)$");
-
+	static Pattern patternStmtRemove = Pattern.compile("^Remove (.+) from the canvas$");
+	static Pattern patternSetColor = Pattern.compile("^Set the color of (.+) to \\((.+), (.+), (.+), (.+)\\)$");
+	static Pattern patternStmtSetCircleRadius = Pattern.compile("^Set the radius of (.+) to (.+)$");
+	static Pattern patternStmtSetBoxSize = Pattern.compile("^Set the size of (.+) to (.+) and (.+)$");
+	static Pattern patternStmtSetLine = Pattern.compile("^Set the chords of (.+) to \\((.+), (.+)\\) and \\((.+), (.+)\\)$"); // (x1, y1) and (x2, y2)
+	static Pattern patternStmtSetText = Pattern.compile("^Set the text of (.+) to (.+)$");
+	static Pattern patternStmtSetSize = Pattern.compile("^Set the size of (.+) to (.+)$");
 
 	// Takes a single statement and parces some GUI statement (May return "" if no match and " " if error)
 	public static String ParseGUIStatement(String input, Map<String, String> blockVars, String indent, int start) {
 		String output;
+
+		output = StmtCreateGlobal(input, blockVars, indent, start);
+		if (!output.equals(""))
+			return output;
 
 		output = StmtCreate(input, blockVars, indent, start);
 		if (!output.equals(""))
@@ -796,6 +807,37 @@ public class Interpreter {
 		if (!output.equals(""))
 			return output;
 		
+		output = StmtRemove(input, blockVars, indent, start);
+		if (!output.equals(""))
+			return output;
+		
+		output = StmtSetColor(input, blockVars, indent, start);
+		if (!output.equals(""))
+			return output;
+		
+		// Circle
+		output = StmtSetCircleRadius(input, blockVars, indent, start);
+		if (!output.equals(""))
+			return output;
+
+		// Box
+		output = StmtSetBoxSize(input, blockVars, indent, start);
+		if (!output.equals(""))
+			return output;
+		
+		// Line
+		output = StmtSetLine(input, blockVars, indent, start);
+		if (!output.equals(""))
+			return output;
+		
+		// Text
+		output = StmtSetText(input, blockVars, indent, start);
+		if (!output.equals(""))
+			return output;
+		output = StmtSetSize(input, blockVars, indent, start);
+		if (!output.equals(""))
+			return output;
+
 		return "";
 	}
 
@@ -808,7 +850,7 @@ public class Interpreter {
 		if (!matcher.find())
 			return "";
 
-		String type = TypeGui(matcher.group(1), start);
+		String type = ParseGuiType(matcher.group(1), start);
 		String name = matcher.group(2);
 
 		// Type is not valid
@@ -829,11 +871,39 @@ public class Interpreter {
 			return indent + type + " " + name + " = new " + type + "();\n" + addToGUI;
 		}
 		else{
-			return indent + name + " = new " + type + "();\n";
+			return indent + name + " = new " + type + "();\n" + addToGUI;
 		}
 	}
+	
+	// Parses a "Create" statement
+	public static String StmtCreateGlobal(String input, Map<String, String> blockVars, String indent, int start) {
+		
+		Matcher matcher = patternStmtCreateGlobal.matcher(input.trim());
 
-	// Parces a "Move" statement
+		// This is not a "Create Global" statement
+		if (!matcher.find())
+			return "";
+
+		String type = ParseGuiType(matcher.group(1), start);
+		String name = matcher.group(2);
+
+		// Type is not valid
+		if (type.equals("")){
+			System.out.println("Error in parsing Create Global statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid GUI type \"%s\"\n", start, matcher.group(1)));
+			return " ";
+		}
+
+		// Add a global var if needed
+		if (!globalVars.containsKey(name)){
+			globalVars.put(name, type);
+		}
+
+		String addToGUI = String.format(indent + "drawableObjects_.add(%s);\n", name);	
+		return indent + name + " = new " + type + "();\n" + addToGUI;
+	}
+
+	// Parses a "Move" statement
 	public static String StmtMove(String input, Map<String, String> blockVars, String indent, int start) {
 		
 		Matcher matcher = patternStmtMove.matcher(input.trim());
@@ -856,7 +926,7 @@ public class Interpreter {
 		}
 
 		// Check if the variable is a GUI type
-		if (TypeGui(checkVariable[0], start).equals("")){
+		if (ParseGuiType(checkVariable[0], start).equals("")){
 			System.out.println("Error in parsing Move statement:");
 			System.out.println(String.format("  SYNTAX ERROR: (line %d) Variable \"%s\" is not a GUI type\n", start, name));
 			return " ";
@@ -899,13 +969,461 @@ public class Interpreter {
 		}
 
 		// Move the GUI object
-		return indent + name + ".moveTo(" + xParsed[1] + ", " + yParsed[1] + ");\n";
+		return indent + name + ".moveTo((int)" + xParsed[1] + ", (int)" + yParsed[1] + ");\n";
+	}
+
+	// Parses a "remove" statement
+	public static String StmtRemove(String input, Map<String, String> blockVars, String indent, int start){
+		
+		Matcher matcher = patternStmtRemove.matcher(input.trim());
+
+		// This is not a "Remove" statement
+		if (!matcher.find())
+			return "";
+		
+		String name = matcher.group(1);
+
+		String[] checkVariable = CheckVariable(name, blockVars);
+
+		// Check if the variable exists
+		if (checkVariable[0].equals("")) {
+			System.out.println("Error in parsing Remove statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Variable \"%s\" does not exist\n", start, name));
+			return " ";
+		}
+
+		// Check if the variable is a GUI type
+		if (ParseGuiType(checkVariable[0], start).equals("")){
+			System.out.println("Error in parsing Remove statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Variable \"%s\" is not a GUI type\n", start, name));
+			return " ";
+		}
+
+		// Remove the GUI object
+		return indent + "drawableObjects_.remove(" + name + ");\n";
+	
+	}
+
+	// Parses a "Set color" statement
+	public static String StmtSetColor(String input, Map<String, String> blockVars, String indent, int start) {
+		
+		Matcher matcher = patternSetColor.matcher(input.trim());
+
+		// This is not a "Set color" statement
+		if (!matcher.find())
+			return "";
+		
+		String name = matcher.group(1);
+		String r = matcher.group(2);
+		String g = matcher.group(3);
+		String b = matcher.group(4);
+		String a = matcher.group(5);
+
+		String[] checkVariable = CheckVariable(name, blockVars);
+
+		// Check if the variable exists
+		if (checkVariable[0].equals("")) {
+			System.out.println("Error in parsing Set color statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Variable \"%s\" does not exist\n", start, name));
+			return " ";
+		}
+
+		// Check if the variable is a GUI type
+		if (ParseGuiType(checkVariable[0], start).equals("")){
+			System.out.println("Error in parsing Set color statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Variable \"%s\" is not a GUI type\n", start, name));
+			return " ";
+		}
+
+		// Validate the color
+		String[] rParsed = ParseExpression(r, blockVars);
+		String[] gParsed = ParseExpression(g, blockVars);
+		String[] bParsed = ParseExpression(b, blockVars);
+		String[] aParsed = ParseExpression(a, blockVars);
+
+		// Check if the red value is valid
+		if (rParsed[0].equals("")){
+			System.out.println("Error in parsing Set color statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid red value in expression", start));
+			System.out.println(String.format("  Given red value: \"%s\"\n", r));
+			return " ";
+		}
+
+		// Check if the green value is valid
+		if (gParsed[0].equals("")){
+			System.out.println("Error in parsing Set color statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid green value in expression", start));
+			System.out.println(String.format("  Given green value: \"%s\"\n", g));
+			return " ";
+		}
+
+		// Check if the blue value is valid
+		if (bParsed[0].equals("")){
+			System.out.println("Error in parsing Set color statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid blue value in expression", start));
+			System.out.println(String.format("  Given blue value: \"%s\"\n", b));
+			return " ";
+		}
+
+		// Check if the alpha value is valid
+		if (aParsed[0].equals("")){
+			System.out.println("Error in parsing Set color statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid alpha value in expression", start));
+			System.out.println(String.format("  Given alpha value: \"%s\"\n", a));
+			return " ";
+		}
+
+		// Test the red type
+		if (!rParsed[0].equals("int") && !rParsed[0].equals("double")){
+			System.out.println("Error in parsing Set color statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for red value", start));
+			System.out.println(String.format("  Given red value: \"%s\"\n", r));
+			return " ";
+		}
+
+		// Test the green type
+		if (!gParsed[0].equals("int") && !gParsed[0].equals("double")){
+			System.out.println("Error in parsing Set color statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for green value", start));
+			System.out.println(String.format("  Given green value: \"%s\"\n", g));
+			return " ";
+		}
+
+		// Test the blue type
+		if (!bParsed[0].equals("int") && !bParsed[0].equals("double")){
+			System.out.println("Error in parsing Set color statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for blue value", start));
+			System.out.println(String.format("  Given blue value: \"%s\"\n", b));
+			return " ";
+		}
+
+		// Test the alpha type
+		if (!aParsed[0].equals("int") && !aParsed[0].equals("double")){
+			System.out.println("Error in parsing Set color statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for alpha value", start));
+			System.out.println(String.format("  Given alpha value: \"%s\"\n", a));
+			return " ";
+		}
+
+		// Set the color
+		return indent + name + ".setColor(new Color((int)" + rParsed[1] + ", (int)" + gParsed[1] + ", (int)" + bParsed[1] + ", (int)" + aParsed[1] + "));\n";
+	}
+
+	// Parses a "Set radius" statement
+	public static String StmtSetCircleRadius(String input, Map<String, String> blockVars, String indent, int start) {
+		
+		Matcher matcher = patternStmtSetCircleRadius.matcher(input.trim());
+
+		// This is not a "Set radius" statement
+		if (!matcher.find())
+			return "";
+		
+		String name = matcher.group(1);
+		String radius = matcher.group(2);
+
+		String[] checkVariable = CheckVariable(name, blockVars);
+
+		// Check if the variable exists
+		if (checkVariable[0].equals("")) {
+			System.out.println("Error in parsing Set radius statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Variable \"%s\" does not exist\n", start, name));
+			return " ";
+		}
+
+		// Check if the variable is a Circle
+		if (!checkVariable[0].equals("Circle")){
+			System.out.println("Error in parsing Set radius statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Variable \"%s\" is not a Circle type\n", start, name));
+			return " ";
+		}
+
+		// Validate the radius
+		String[] radiusParsed = ParseExpression(radius, blockVars);
+
+		// Check if the radius is valid
+		if (radiusParsed[0].equals("")){
+			System.out.println("Error in parsing Set radius statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid radius in expression", start));
+			System.out.println(String.format("  Given radius value: \"%s\"\n", radius));
+			return " ";
+		}
+
+		// Test the radius type
+		if (!radiusParsed[0].equals("int") && !radiusParsed[0].equals("double")){
+			System.out.println("Error in parsing Set radius statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for radius \"%s\"", start, radiusParsed[0]));
+			System.out.println(String.format("  Given radius value: \"%s\"\n", radius));
+			return " ";
+		}
+
+		// Set the radius
+		return indent + name + ".setRadius((int)" + radiusParsed[1] + ");\n";
+	
+	}
+
+	// Parses a "Set size" statement
+	public static String StmtSetBoxSize(String input, Map<String, String> blockVars, String indent, int start) {
+
+		Matcher matcher = patternStmtSetBoxSize.matcher(input.trim());
+
+		// This is not a "Set size" statement
+		if (!matcher.find())
+			return "";
+		
+		String name = matcher.group(1);
+		String width = matcher.group(2);
+		String height = matcher.group(3);
+
+		String[] checkVariable = CheckVariable(name, blockVars);
+
+		// Check if the variable exists
+		if (checkVariable[0].equals("")) {
+			System.out.println("Error in parsing Set size statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Variable \"%s\" does not exist\n", start, name));
+			return " ";
+		}
+
+		// Check if the variable is a Box
+		if (!checkVariable[0].equals("Box")){
+			System.out.println("Error in parsing Set size statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Variable \"%s\" is not a Box type\n", start, name));
+			return " ";
+		}
+
+		// Validate the width and height
+		String[] widthParsed = ParseExpression(width, blockVars);
+		String[] heightParsed = ParseExpression(height, blockVars);
+
+		// Test the width type
+		if (!widthParsed[0].equals("int") && !widthParsed[0].equals("double")){
+			System.out.println("Error in parsing Set size statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for width \"%s\"", start, widthParsed[0]));
+			System.out.println(String.format("  Given width value: \"%s\"\n", width));
+			return " ";
+		}
+
+		// Test the height type
+		if (!heightParsed[0].equals("int") && !heightParsed[0].equals("double")){
+			System.out.println("Error in parsing Set size statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for height \"%s\"", start, heightParsed[0]));
+			System.out.println(String.format("  Given height value: \"%s\"\n", height));
+			return " ";
+		}
+
+		// Set the size
+		return indent + name + ".setSize((int)" + widthParsed[1] + ", (int)" + heightParsed[1] + ");\n";
+	}
+
+	// Parses a "Set line" statement
+	public static String StmtSetLine(String input, Map<String, String> blockVars, String indent, int start) {
+		
+		Matcher matcher = patternStmtSetLine.matcher(input.trim());
+
+		// This is not a "Set line" statement
+		if (!matcher.find())
+			return "";
+		
+		String name = matcher.group(1);
+		String x1 = matcher.group(2);
+		String y1 = matcher.group(3);
+		String x2 = matcher.group(4);
+		String y2 = matcher.group(5);
+
+		String[] checkVariable = CheckVariable(name, blockVars);
+
+		// Check if the variable exists
+		if (checkVariable[0].equals("")) {
+			System.out.println("Error in parsing Set line statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Variable \"%s\" does not exist\n", start, name));
+			return " ";
+		}
+
+		// Check if the variable is a Line
+		if (!checkVariable[0].equals("Line")){
+			System.out.println("Error in parsing Set line statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Variable \"%s\" is not a Line type\n", start, name));
+			return " ";
+		}
+
+		// Validate the positions
+		String[] x1Parsed = ParseExpression(x1, blockVars);
+		String[] y1Parsed = ParseExpression(y1, blockVars);
+		String[] x2Parsed = ParseExpression(x2, blockVars);
+		String[] y2Parsed = ParseExpression(y2, blockVars);
+
+		// Check if the x1 position is valid
+		if (x1Parsed[0].equals("")){
+			System.out.println("Error in parsing Set line statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid position in expression", start));
+			System.out.println(String.format("  Given X1 value: \"%s\"\n", x1));
+			return " ";
+		}
+
+		// Check if the y1 position is valid
+		if (y1Parsed[0].equals("")){
+			System.out.println("Error in parsing Set line statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid position in expression", start));
+			System.out.println(String.format("  Given Y1 value: \"%s\"\n", y1));
+			return " ";
+		}
+
+		// Check if the x2 position is valid
+		if (x2Parsed[0].equals("")){
+			System.out.println("Error in parsing Set line statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid position in expression", start));
+			System.out.println(String.format("  Given X2 value: \"%s\"\n", x2));
+			return " ";
+		}	
+
+		// Check if the y2 position is valid
+		if (y2Parsed[0].equals("")){
+			System.out.println("Error in parsing Set line statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid position in expression", start));
+			System.out.println(String.format("  Given Y2 value: \"%s\"\n", y2));
+			return " ";
+		}
+
+		// Test the x1 type
+		if (!x1Parsed[0].equals("int") && !x1Parsed[0].equals("double")){
+			System.out.println("Error in parsing Set line statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for X1 position", start));
+			System.out.println(String.format("  Given X1 value: \"%s\"\n", x1));
+			return " ";
+		}
+
+		// Test the y1 type
+		if (!y1Parsed[0].equals("int") && !y1Parsed[0].equals("double")){
+			System.out.println("Error in parsing Set line statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for Y1 position", start));
+			System.out.println(String.format("  Given Y1 value: \"%s\"\n", y1));
+			return " ";
+		}
+
+		// Test the x2 type
+		if (!x2Parsed[0].equals("int") && !x2Parsed[0].equals("double")){
+			System.out.println("Error in parsing Set line statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for X2 position", start));
+			System.out.println(String.format("  Given X2 value: \"%s\"\n", x2));
+			return " ";
+		}
+
+		// Test the y2 type
+		if (!y2Parsed[0].equals("int") && !y2Parsed[0].equals("double")){
+			System.out.println("Error in parsing Set line statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for Y2 position", start));
+			System.out.println(String.format("  Given Y2 value: \"%s\"\n", y2));
+			return " ";
+		}
+
+		// Set the chords
+		return indent + name + ".setLine((int)" + x1Parsed[1] + ", (int)" + y1Parsed[1] + ", (int)" + x2Parsed[1] + ", (int)" + y2Parsed[1] + ");\n";
+	}
+
+	// Parses a "Set text" statement
+	public static String StmtSetText(String input, Map<String, String> blockVars, String indent, int start) {
+		
+		Matcher matcher = patternStmtSetText.matcher(input.trim());
+
+		// This is not a "Set text" statement
+		if (!matcher.find())
+			return "";
+		
+		String name = matcher.group(1);
+		String text = matcher.group(2);
+
+		String[] checkVariable = CheckVariable(name, blockVars);
+
+		// Check if the variable exists
+		if (checkVariable[0].equals("")) {
+			System.out.println("Error in parsing Set text statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Variable \"%s\" does not exist\n", start, name));
+			return " ";
+		}
+
+		// Check if the variable is a Text
+		if (!checkVariable[0].equals("Text")){
+			System.out.println("Error in parsing Set text statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Variable \"%s\" is not a Text type\n", start, name));
+			return " ";
+		}
+
+		String[] textParsed = ParseExpression(text, blockVars);
+
+		// Check if the text is valid
+		if (textParsed[0].equals("")){
+			System.out.println("Error in parsing Set text statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid text in expression", start));
+			System.out.println(String.format("  Given text value: \"%s\"\n", text));
+			return " ";
+		}
+
+		// Test the text type
+		if (!textParsed[0].equals("String")){
+			System.out.println("Error in parsing Set text statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for text \"%s\"", start, textParsed[0]));
+			System.out.println(String.format("  Given text value: \"%s\"\n", text));
+			return " ";
+		}
+
+		// Set the text
+		return indent + name + ".setText(" + textParsed[1] + ");\n";
+	}
+
+	// Parses a "Set size" statement (Text size and Line thickness)
+	public static String StmtSetSize(String input, Map<String, String> blockVars, String indent, int start) {
+		
+		Matcher matcher = patternStmtSetSize.matcher(input.trim());
+
+		// This is not a "Set text size" statement
+		if (!matcher.find())
+			return "";
+		
+		String name = matcher.group(1);
+		String size = matcher.group(2);
+
+		String[] checkVariable = CheckVariable(name, blockVars);
+
+		// Check if the variable exists
+		if (checkVariable[0].equals("")) {
+			System.out.println("Error in parsing Set text/line size statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Variable \"%s\" does not exist\n", start, name));
+			return " ";
+		}
+
+		// Check if the variable is a Text
+		if (!checkVariable[0].equals("Text") && !checkVariable[0].equals("Line")){
+			System.out.println("Error in parsing Set text/line size statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Variable \"%s\" is not a Text/Line type\n", start, name));
+			return " ";
+		}
+
+		// Validate the size
+		String[] sizeParsed = ParseExpression(size, blockVars);
+
+		// Check if the size is valid
+		if (sizeParsed[0].equals("")){
+			System.out.println("Error in parsing Set text/line size statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid size in expression", start));
+			System.out.println(String.format("  Given size value: \"%s\"\n", size));
+			return " ";
+		}
+
+		// Test the size type
+		if (!sizeParsed[0].equals("int") && !sizeParsed[0].equals("double")){
+			System.out.println("Error in parsing Set text/line size statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for size \"%s\"", start, sizeParsed[0]));
+			System.out.println(String.format("  Given size value: \"%s\"\n", size));
+			return " ";
+		}
+
+		// Set the size
+		return indent + name + ".setSize((int)" + sizeParsed[1] + ");\n";
 	}
 
 	/* ----------------------------- GUI Validation ----------------------------- */
 
 	// Validates a GUI type
-	public static String TypeGui(String type, int start){
+	public static String ParseGuiType(String type, int start){
 		
 		switch (type) {
 			case "Box":

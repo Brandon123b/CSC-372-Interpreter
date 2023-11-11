@@ -111,8 +111,14 @@ class DrawingCanvas extends JPanel {
 	/*                           Interpreted Global Vars                          */
 	/* -------------------------------------------------------------------------- */
 
+	int line1ly;
+	Circle cirk;
+	int line1lx;
+	int line1rx;
+	int xPos;
+	Line line1;
+	int line1ry;
 
-	Circle circle1;
 
 	/* -------------------------------------------------------------------------- */
 	/*                            Interpreted Functions                           */
@@ -120,93 +126,38 @@ class DrawingCanvas extends JPanel {
 
 	public void pie(){
 
-		Box Pie = new Box();
-		drawableObjects_.add(Pie);
-		Circle cir = new Circle();
-		drawableObjects_.add(cir);
-		Pie.moveTo(100, 100);
-		cir.moveTo(300, 300);
+		Box Boxey = new Box();
+		drawableObjects_.add(Boxey);
+		Boxey.moveTo((int)100.0, (int)100.0);
+		Boxey.setSize((int)200, (int)500);
+		Boxey.setColor(new Color((int)255, (int)0, (int)0, (int)50));
+		cirk = new Circle();
+		drawableObjects_.add(cirk);
+		cirk.setRadius((int)30);
+		xPos = 0;
+		line1 = new Line();
+		drawableObjects_.add(line1);
+		line1lx = 0;
+		line1ly = 0;
+		line1rx = 1920;
+		line1ry = 1080;
+		line1.setSize((int)10);
+		Text text1 = new Text();
+		drawableObjects_.add(text1);
+		text1.setText("Hello World!" + "  Goodbye!");
+		text1.moveTo((int)100, (int)100);
+		text1.setSize((int)80);
 	}
 	public void Gameloop(){
 
+		xPos = xPos+2;
+		cirk.moveTo((int)xPos, (int)500);
+		line1lx = line1lx+3;
+		line1rx = line1rx-3;
+		line1.setLine((int)line1lx, (int)line1ly, (int)line1rx, (int)line1ry);
 	}
 
 
-	/* -------------------------------------------------------------------------- */
-	/*                                    Temp                                    */
-	/* -------------------------------------------------------------------------- */
-
-// 	// A test function to show how some of these commands will work for the GUI (TODO: Remove)
-// 	public void DisplayCommands() {
-
-// 		/* ----------------------------------- Box ---------------------------------- */
-
-// 		// Create a Box called box1 # Same for Circle, line, and text
-// 		Box box1; // To be placed at top of function
-// 		box1 = new Box(0, 0, 0, 0, Color.BLACK);
-// 		drawableObjects_.add(box1);
-
-// 		// Set the size of Box box1 to 1900 and 540 # Width, height
-// 		box1.setSize(1900, 540);
-// 		// Move box1 to 10 and 150 # x and y pos
-// 		box1.moveTo(10, 150);
-
-// 		// If box1 is clicked call function OnBox1Clicked
-// 		box1.setOnClicked(input -> OnBox1Clicked());
-
-// 		/* --------------------------------- Circle --------------------------------- */
-
-// 		// Create a global circle called circle1
-// 		circle1 = new Circle(0, 0, 0, Color.BLACK);
-// 		drawableObjects_.add(circle1);
-
-// 		// Set the size of Circle circle1 to 30 # Radius
-// 		circle1.setRadius(30);
-// 		// Move circle1 to 300 and 150 # x and y pos
-// 		circle1.moveTo(300, 150);
-
-// 		// Set the color of circle1 to red # Hex or some premade colors?
-// 		circle1.setColor(Color.RED);
-
-// 		// If circle1 is clicked call function OnCircle1Clicked
-// 		circle1.setOnClicked(input -> OnCircle1Clicked());
-
-// 		/* ---------------------------------- Line ---------------------------------- */
-
-// 		// Create a line called line1
-// 		Line line1; // To be placed at top of functions
-// 		line1 = new Line(0, 0, 0, 0, Color.BLACK);
-// 		drawableObjects_.add(line1);
-
-// 		// Set the line1 to go from 0, 0 to 100, 100
-// 		line1.setLine(0, 0, 100, 100);
-
-// 		/* ---------------------------------- Text ---------------------------------- */
-
-// 		// Create a text called text1
-// 		Text text1; // To be placed at top of functions
-// 		text1 = new Text(0, 0, "Hello World!", Color.BLACK);
-// 		drawableObjects_.add(text1);
-
-// 		// Set the size of text1 to 50
-// 		text1.setFontSize(50);
-
-// 		// Move text1 to 100 and 50
-// 		text1.moveTo(100, 50);
-// 	}
-
-// 	// A test function to show how the onClicked functions will work (TODO: Remove)
-// 	public void OnBox1Clicked() {
-// 		System.out.println("Box 1 Clicked!");
-// 	}
-
-// 	// A test function to show how the onClicked functions will work (TODO: Remove)
-// 	public void OnCircle1Clicked() {
-// 		System.out.println("Circle 1 killed!");
-
-// 		// Remove circle1 from the canvas. (circle1 is global)
-// 		objectsToRemove_.add(circle1);
-// 	}
 }
 
 /* -------------------------------------------------------------------------- */
@@ -320,6 +271,7 @@ class Circle extends DrawableObject {
 class Line extends DrawableObject {
 	private Point start; // Starting point of the line
 	private Point end; // Ending point of the line
+	private int size = 1; // Line thickness
 
 	public Line() {
 		super(-1, -1, Color.BLACK); // position is not used
@@ -342,10 +294,16 @@ class Line extends DrawableObject {
 		start.setLocation(x1, y1);
 		end.setLocation(x2, y2);
 	}
+	
+    // Sets the line thickness
+    public void setSize(int size) {
+        this.size = size;
+    }
 
 	@Override
 	public void draw(Graphics g) {
 		g.setColor(color);
+		((Graphics2D) g).setStroke(new BasicStroke(size));
 		g.drawLine(start.x, start.y, end.x, end.y);
 	}
 
@@ -357,7 +315,7 @@ class Line extends DrawableObject {
 
 class Text extends DrawableObject {
 	private String text;
-	private Font font = new Font("Arial", Font.PLAIN, 12); // Default font
+	private Font font = new Font("Arial", Font.PLAIN, 24); // Default font
 
 	public Text() {
 		super(0, 0, Color.BLACK);
@@ -380,7 +338,7 @@ class Text extends DrawableObject {
 	}
 
 	// Sets the size of the font
-	public void setFontSize(int size) {
+	public void setSize(int size) {
 		font = new Font(font.getName(), font.getStyle(), size);
 	}
 
