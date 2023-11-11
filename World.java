@@ -9,10 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class MainTemplate {
+public class World {
 
 	public static void main(String[] args) {
-		JFrame frame = new JFrame("MainTemplate");
+		JFrame frame = new JFrame("World");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setSize(1920 / 2, 1080 / 2); // Default window size
 		frame.setLocationRelativeTo(null); // Center the window
@@ -22,7 +22,16 @@ public class MainTemplate {
 		frame.add(canvas);
 		frame.setVisible(true);
 
-		/* {Call_Start} */ // consider program args
+		if(args.length != 0) {
+			System.err.println("Invalid number of arguments specified!");
+			System.exit(1);
+		}
+		try {
+			canvas.Init();
+		} catch (Exception e) {
+			System.err.println("Invalid arguments specified!");
+			System.exit(1);
+		} // consider program args
 
 		canvas.startDrawing(); // Start drawing on the canvas
 	}
@@ -74,7 +83,7 @@ class DrawingCanvas extends JPanel {
 	public void startDrawing() {
 		Timer timer = new Timer(20, e -> {
 
-			/* {Call_GameLoop} */ // Only if it exists
+			Gameloop(); // Only if it exists
 			repaint();
 		});
 		timer.start();
@@ -102,13 +111,192 @@ class DrawingCanvas extends JPanel {
 	/*                           Interpreted Global Vars                          */
 	/* -------------------------------------------------------------------------- */
 
-/* {Global_Vars} */
+	Line sunLines3;
+	Line sunLines4;
+	Line sunLines5;
+	Line sunLines6;
+	double cos30;
+	Line sunLines7;
+	Line sunLines8;
+	Line sunLines9;
+	double sunLineY;
+	Circle sun;
+	double sunLineX;
+	int sunLinesCount;
+	int sunPosy;
+	int sunPosx;
+	int sunLinesLength;
+	double cos1;
+	double sin1;
+	double sin30;
+	Box backGround;
+	int sunLinesGap;
+	int sunRadius;
+	Line sunLines11;
+	Line sunLines10;
+	Line sunLines12;
+	Line sunLines1;
+	Line sunLines2;
+
 
 	/* -------------------------------------------------------------------------- */
 	/*                            Interpreted Functions                           */
 	/* -------------------------------------------------------------------------- */
 
-/* {Functions} */
+	public void Init(){
+
+		backGround = new Box();
+		drawableObjects_.add(backGround);
+		backGround.moveTo(0, 0);
+		backGround.setSize(1920, 1080);
+		backGround.setColor(new Color(135, 206, 250, 255));
+		sunRadius = 115;
+		sunLinesCount = 12;
+		sunLinesGap = sunRadius+25;
+		sunLinesLength = 150;
+		sunPosx = 1600;
+		sunPosy = 200;
+		sun = new Circle();
+		drawableObjects_.add(sun);
+		sun.setRadius(sunRadius);
+		sun.setColor(new Color(255, 255, 102, 255));
+		sun.moveTo(sunPosx, sunPosy);
+		sunLines1 = new Line();
+		drawableObjects_.add(sunLines1);
+		sunLines2 = new Line();
+		drawableObjects_.add(sunLines2);
+		sunLines3 = new Line();
+		drawableObjects_.add(sunLines3);
+		sunLines4 = new Line();
+		drawableObjects_.add(sunLines4);
+		sunLines5 = new Line();
+		drawableObjects_.add(sunLines5);
+		sunLines6 = new Line();
+		drawableObjects_.add(sunLines6);
+		sunLines7 = new Line();
+		drawableObjects_.add(sunLines7);
+		sunLines8 = new Line();
+		drawableObjects_.add(sunLines8);
+		sunLines9 = new Line();
+		drawableObjects_.add(sunLines9);
+		sunLines10 = new Line();
+		drawableObjects_.add(sunLines10);
+		sunLines11 = new Line();
+		drawableObjects_.add(sunLines11);
+		sunLines12 = new Line();
+		drawableObjects_.add(sunLines12);
+		int lineSize = 5;
+		sunLines1.setSize(lineSize);
+		sunLines2.setSize(lineSize);
+		sunLines3.setSize(lineSize);
+		sunLines4.setSize(lineSize);
+		sunLines5.setSize(lineSize);
+		sunLines6.setSize(lineSize);
+		sunLines7.setSize(lineSize);
+		sunLines8.setSize(lineSize);
+		sunLines9.setSize(lineSize);
+		sunLines10.setSize(lineSize);
+		sunLines11.setSize(lineSize);
+		sunLines12.setSize(lineSize);
+		sunLines1.setColor(new Color(255, 255, 102, 255));
+		sunLines2.setColor(new Color(255, 255, 102, 255));
+		sunLines3.setColor(new Color(255, 255, 102, 255));
+		sunLines4.setColor(new Color(255, 255, 102, 255));
+		sunLines5.setColor(new Color(255, 255, 102, 255));
+		sunLines6.setColor(new Color(255, 255, 102, 255));
+		sunLines7.setColor(new Color(255, 255, 102, 255));
+		sunLines8.setColor(new Color(255, 255, 102, 255));
+		sunLines9.setColor(new Color(255, 255, 102, 255));
+		sunLines10.setColor(new Color(255, 255, 102, 255));
+		sunLines11.setColor(new Color(255, 255, 102, 255));
+		sunLines12.setColor(new Color(255, 255, 102, 255));
+		cos30 = 0.866;
+		sin30 = 0.5;
+		cos1 = 0.99984769515639123915701155881391;
+		sin1 = 0.01745240643728351281941897851632;
+		sunLineX = 0.0;
+		sunLineY = 1.0;
+	}
+	public void Gameloop(){
+
+		sunLineX = sunLineX*cos1-sunLineY*sin1;
+		sunLineY = sunLineX*sin1+sunLineY*cos1;
+		double x = sunLineX;
+		double y = sunLineY;
+		double tempx = x;
+		x = x*cos30-y*sin30;
+		y = tempx*sin30+y*cos30;
+		double startX = sunPosx+x*sunLinesGap;
+		double startY = sunPosy+y*sunLinesGap;
+		sunLines1.setLine(startX, startY, startX+x*sunLinesLength, startY+y*sunLinesLength);
+		tempx = x;
+		x = x*cos30-y*sin30;
+		y = tempx*sin30+y*cos30;
+		startX = sunPosx+x*sunLinesGap;
+		startY = sunPosy+y*sunLinesGap;
+		sunLines2.setLine(startX, startY, startX+x*sunLinesLength/2, startY+y*sunLinesLength/2);
+		tempx = x;
+		x = x*cos30-y*sin30;
+		y = tempx*sin30+y*cos30;
+		startX = sunPosx+x*sunLinesGap;
+		startY = sunPosy+y*sunLinesGap;
+		sunLines3.setLine(startX, startY, startX+x*sunLinesLength, startY+y*sunLinesLength);
+		tempx = x;
+		x = x*cos30-y*sin30;
+		y = tempx*sin30+y*cos30;
+		startX = sunPosx+x*sunLinesGap;
+		startY = sunPosy+y*sunLinesGap;
+		sunLines4.setLine(startX, startY, startX+x*sunLinesLength/2, startY+y*sunLinesLength/2);
+		tempx = x;
+		x = x*cos30-y*sin30;
+		y = tempx*sin30+y*cos30;
+		startX = sunPosx+x*sunLinesGap;
+		startY = sunPosy+y*sunLinesGap;
+		sunLines5.setLine(startX, startY, startX+x*sunLinesLength, startY+y*sunLinesLength);
+		tempx = x;
+		x = x*cos30-y*sin30;
+		y = tempx*sin30+y*cos30;
+		startX = sunPosx+x*sunLinesGap;
+		startY = sunPosy+y*sunLinesGap;
+		sunLines6.setLine(startX, startY, startX+x*sunLinesLength/2, startY+y*sunLinesLength/2);
+		tempx = x;
+		x = x*cos30-y*sin30;
+		y = tempx*sin30+y*cos30;
+		startX = sunPosx+x*sunLinesGap;
+		startY = sunPosy+y*sunLinesGap;
+		sunLines7.setLine(startX, startY, startX+x*sunLinesLength, startY+y*sunLinesLength);
+		tempx = x;
+		x = x*cos30-y*sin30;
+		y = tempx*sin30+y*cos30;
+		startX = sunPosx+x*sunLinesGap;
+		startY = sunPosy+y*sunLinesGap;
+		sunLines8.setLine(startX, startY, startX+x*sunLinesLength/2, startY+y*sunLinesLength/2);
+		tempx = x;
+		x = x*cos30-y*sin30;
+		y = tempx*sin30+y*cos30;
+		startX = sunPosx+x*sunLinesGap;
+		startY = sunPosy+y*sunLinesGap;
+		sunLines9.setLine(startX, startY, startX+x*sunLinesLength, startY+y*sunLinesLength);
+		tempx = x;
+		x = x*cos30-y*sin30;
+		y = tempx*sin30+y*cos30;
+		startX = sunPosx+x*sunLinesGap;
+		startY = sunPosy+y*sunLinesGap;
+		sunLines10.setLine(startX, startY, startX+x*sunLinesLength/2, startY+y*sunLinesLength/2);
+		tempx = x;
+		x = x*cos30-y*sin30;
+		y = tempx*sin30+y*cos30;
+		startX = sunPosx+x*sunLinesGap;
+		startY = sunPosy+y*sunLinesGap;
+		sunLines11.setLine(startX, startY, startX+x*sunLinesLength, startY+y*sunLinesLength);
+		tempx = x;
+		x = x*cos30-y*sin30;
+		y = tempx*sin30+y*cos30;
+		startX = sunPosx+x*sunLinesGap;
+		startY = sunPosy+y*sunLinesGap;
+		sunLines12.setLine(startX, startY, startX+x*sunLinesLength/2, startY+y*sunLinesLength/2);
+	}
+
 
 }
 

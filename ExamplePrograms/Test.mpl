@@ -27,11 +27,11 @@ Begin a function called pie.
 	Set the size of text1 to 80.
 
 	# Errors?
-	# Move Boxey to 9*4 and 7wasdwasd. 		# ParseExpression(7wasdwasd, blockVars) fails to report the correct type. (it claims its an int or double?)
-	# Set xPos to xPos + 3.0.				# ParseExpression(x, blockVars) fails to allow doubles when adding.
-	# Set str1 to "Hello".
-	# Set str2 to "World".
-	# Set str3 to str1 + str2.				# Can't add 2 string vars
+	# Move Boxey to 9*4 and 7wasdwasd. 		 ParseExpression(7wasdwasd, blockVars) fails to report the correct type. (it claims its an int or double?)
+	# Set xPos to xPos + 3.0.				 ParseExpression(x, blockVars) fails to allow doubles when adding.
+	# Set str1 to Hello.
+	# Set str2 to World.					 (quotes in comments break it)
+	# Set str3 to str1 + str2.				 Can't add 2 string vars
 	# Print str3 to the console.
 
 

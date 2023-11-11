@@ -14,11 +14,11 @@ $(BIN_DIR)/%.class: $(SRC_DIR)/%.java
 # Compile any *.mpl file into a *.class file (in bin)
 %.class: all %.mpl
 	java -cp $(BIN_DIR) Interpreter $*.mpl
-	javac -sourcepath $(SRC_DIR) -d $(BIN_DIR) $*.java
+	javac -sourcepath $(SRC_DIR) -d $(BIN_DIR) $(notdir $*).java
 
 # Run the interpreter on the given file, then run it
 %: all %.class
-	java -cp $(BIN_DIR) $@
+	java -cp $(BIN_DIR) $(notdir $@)
 
 clean:
 	rm -rf $(BIN_DIR)/*

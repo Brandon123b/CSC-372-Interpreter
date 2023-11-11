@@ -20,8 +20,6 @@ public class Interpreter {
 
 	public static void main(String[] args) {
 
-		Test();
-
 		// Get input file from command line
 		if (args.length == 1) {
 			inputFile = args[0];
@@ -971,7 +969,7 @@ public class Interpreter {
 		}
 
 		// Move the GUI object
-		return indent + name + ".moveTo((int)" + xParsed[1] + ", (int)" + yParsed[1] + ");\n";
+		return indent + name + ".moveTo(" + xParsed[1] + ", " + yParsed[1] + ");\n";
 	}
 
 	// Parses a "remove" statement
@@ -1108,7 +1106,7 @@ public class Interpreter {
 		}
 
 		// Set the color
-		return indent + name + ".setColor(new Color((int)" + rParsed[1] + ", (int)" + gParsed[1] + ", (int)" + bParsed[1] + ", (int)" + aParsed[1] + "));\n";
+		return indent + name + ".setColor(new Color(" + rParsed[1] + ", " + gParsed[1] + ", " + bParsed[1] + ", " + aParsed[1] + "));\n";
 	}
 
 	// Parses a "Set radius" statement
@@ -1159,7 +1157,7 @@ public class Interpreter {
 		}
 
 		// Set the radius
-		return indent + name + ".setRadius((int)" + radiusParsed[1] + ");\n";
+		return indent + name + ".setRadius(" + radiusParsed[1] + ");\n";
 	
 	}
 
@@ -1213,7 +1211,7 @@ public class Interpreter {
 		}
 
 		// Set the size
-		return indent + name + ".setSize((int)" + widthParsed[1] + ", (int)" + heightParsed[1] + ");\n";
+		return indent + name + ".setSize(" + widthParsed[1] + ", " + heightParsed[1] + ");\n";
 	}
 
 	// Parses a "Set line" statement
@@ -1318,7 +1316,7 @@ public class Interpreter {
 		}
 
 		// Set the chords
-		return indent + name + ".setLine((int)" + x1Parsed[1] + ", (int)" + y1Parsed[1] + ", (int)" + x2Parsed[1] + ", (int)" + y2Parsed[1] + ");\n";
+		return indent + name + ".setLine(" + x1Parsed[1] + ", " + y1Parsed[1] + ", " + x2Parsed[1] + ", " + y2Parsed[1] + ");\n";
 	}
 
 	// Parses a "Set text" statement
@@ -1411,7 +1409,7 @@ public class Interpreter {
 		}
 
 		// Test the size type
-		if (!sizeParsed[0].equals("int") && !sizeParsed[0].equals("double")){
+		if (!sizeParsed[0].equals("int")){
 			System.out.println("Error in parsing Set text/line size statement:");
 			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for size \"%s\"", start, sizeParsed[0]));
 			System.out.println(String.format("  Given size value: \"%s\"\n", size));
@@ -1419,7 +1417,7 @@ public class Interpreter {
 		}
 
 		// Set the size
-		return indent + name + ".setSize((int)" + sizeParsed[1] + ");\n";
+		return indent + name + ".setSize(" + sizeParsed[1] + ");\n";
 	}
 
 	public static void Test(){
