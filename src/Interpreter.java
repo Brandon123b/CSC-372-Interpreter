@@ -20,6 +20,8 @@ public class Interpreter {
 
 	public static void main(String[] args) {
 
+		Test();
+
 		// Get input file from command line
 		if (args.length == 1) {
 			inputFile = args[0];
@@ -1418,6 +1420,23 @@ public class Interpreter {
 
 		// Set the size
 		return indent + name + ".setSize((int)" + sizeParsed[1] + ");\n";
+	}
+
+	public static void Test(){
+
+		String output;
+
+		// Test ParseExpression
+		output = ParseExpression("wasdwasd", globalVars)[0];
+		System.out.println("Expr: " + output);	// output: ""
+
+		// Test ParseExpression
+		output = ParseExpression("45wasdwasd", globalVars)[0];
+		System.out.println("Expr: " + output);	// output: "int"
+
+		// Test adding doubles
+		output = ParseExpression("1.0 + 1.0", globalVars)[0];
+		System.out.println("Expr: " + output);	// output: ""
 	}
 
 	/* ----------------------------- GUI Validation ----------------------------- */
