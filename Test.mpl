@@ -1,21 +1,15 @@
 
+Begin a function called pie.
+	Create a Box called Pie.
+	Create a Circle called cir.
 
-Begin a function called fun0. 
-	// Function
-	// Do something
+	Move Pie to 100 and 100.
+	Move cir to 300 and 300.
 Leave the function.
 
-Begin a function called Fun1 with a int called hi. 
-	// Function
-	// Do something
-Leave the function.
 
-Begin a function called Fun2 with an int cal led hi, and a bool called foo. 
-	// Function
-	// Do something
-Leave the function.
 
-Begin a function called Fun3 with an int called int0, a bool called bool1 and a bool called foo. 
-	// Function
-	// Do something
+
+Begin a function called Gameloop. 
+
 Leave the function.

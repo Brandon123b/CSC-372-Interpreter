@@ -1,6 +1,5 @@
-import java.util.Arrays;
+
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.HashMap;
 import java.util.Stack;
 
@@ -50,6 +49,7 @@ public class Interpreter {
 		// Check for errors before continuing
 		if (hasError)
 			System.exit(1);
+		
 
 		//
 		// Write to the output file
@@ -64,10 +64,12 @@ public class Interpreter {
 		template = template.replace("/* {Global_Vars} */", GlobalVariables());
 		// Call first function from main() (With command line args)
 		template = template.replace("/* {Call_Start} */", CallMainFunction(functions.get(0)));
-		// TODO: Gameloop
 		// Replace the function declarations
 		template = template.replace("/* {Functions} */", functionDecl.toString());
 
+		if (hasGameloop(functions)) 
+			template = template.replace("/* {Call_GameLoop} */", "Gameloop();");
+			
 		Utils.WriteStringToFile(template, outputFile);
 	}
 
@@ -165,6 +167,17 @@ public class Interpreter {
 			sb.append("\t").append(entry.getValue()).append(" ").append(entry.getKey()).append(";\n");
 		}
 		return sb.toString();
+	}
+
+	// Returns true if there is a function called "Gameloop"
+	public static boolean hasGameloop(List<Function> functions){
+
+		for (Function function : functions) {
+			if (function.name.equals("Gameloop"))
+				return true;
+		}
+
+		return false;
 	}
 
 	/* -------------------------------------------------------------------------- */
@@ -434,8 +447,18 @@ public class Interpreter {
 					+ ParseReturnStmt(matchers.get("returnStmt").group(1), blockVars, fn, file, start, end, curLine)
 					+ ";\n");
 			} else {
+
+				// Try a GUI statement
+				String guiStmt = ParseGUIStatement(line, blockVars, indent, curLine);
+
+				// GUI statement found
+				if (guiStmt != null && !guiStmt.equals("")) {
+					sb.append(guiStmt);
+					continue;
+				}
+
 				// error
-				System.out.println("SYNTAX ERROR: unrecognized statement " + line);
+				System.out.println("SYNTAX ERROR: unrecognized statement \"" + line + "\"");
 				Utils.PrintParseError(file, start, end, curLine, curLine + 1);
 				return "";
 			}
@@ -594,7 +617,7 @@ public class Interpreter {
 
 	public static String[] ParseMathExpr(String input, Map<String, String> blockVars) {
 		StringBuilder sb = new StringBuilder();
-		Pattern validate = Pattern.compile("^[()+\\-*/%A-Za-z0-9\s]+$");
+		Pattern validate = Pattern.compile("^[()+\\-*/%A-Za-z0-9\\s]+$");
 		Matcher validateM = validate.matcher(input);
 		if (!validateM.matches()) {
 			// error non-mathematic characters present
@@ -734,6 +757,7 @@ public class Interpreter {
 			ret[0] = blockVars.get(input);
 			ret[1] = input;
 		}
+
 		return ret;
 	}
 
@@ -754,6 +778,151 @@ public class Interpreter {
 		return ret;
 	}
 	
+	/* ----------------------------- GUI Statements ----------------------------- */
+	
+	static Pattern patternStmtCreate = Pattern.compile("^Create a (.+) called (.+)$");
+	static Pattern patternStmtMove = Pattern.compile("^Move (.+) to (.+) and (.+)$");
+
+
+	// Takes a single statement and parces some GUI statement (May return "" if no match and " " if error)
+	public static String ParseGUIStatement(String input, Map<String, String> blockVars, String indent, int start) {
+		String output;
+
+		output = StmtCreate(input, blockVars, indent, start);
+		if (!output.equals(""))
+			return output;
+			
+		output = StmtMove(input, blockVars, indent, start);
+		if (!output.equals(""))
+			return output;
+		
+		return "";
+	}
+
+	// Parses a "Create" statement
+	public static String StmtCreate(String input, Map<String, String> blockVars, String indent, int start) {
+		
+		Matcher matcher = patternStmtCreate.matcher(input.trim());
+
+		// This is not a "Create" statement
+		if (!matcher.find())
+			return "";
+
+		String type = TypeGui(matcher.group(1), start);
+		String name = matcher.group(2);
+
+		// Type is not valid
+		if (type.equals("")){
+			System.out.println("Error in parsing Create statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid GUI type \"%s\"\n", start, matcher.group(1)));
+			return " ";
+		}
+
+		// Test if the var exisis
+		String[] CheckVariable = CheckVariable(name, blockVars);
+
+		String addToGUI = String.format(indent + "drawableObjects_.add(%s);\n", name);	
+
+		// Either declaires a new type, or assigns a value to an existing variable
+		if (CheckVariable[0].equals("")) {
+			blockVars.put(name, type);
+			return indent + type + " " + name + " = new " + type + "();\n" + addToGUI;
+		}
+		else{
+			return indent + name + " = new " + type + "();\n";
+		}
+	}
+
+	// Parces a "Move" statement
+	public static String StmtMove(String input, Map<String, String> blockVars, String indent, int start) {
+		
+		Matcher matcher = patternStmtMove.matcher(input.trim());
+
+		// This is not a "Move" statement
+		if (!matcher.find())
+			return "";
+		
+		String name = matcher.group(1);
+		String x = matcher.group(2);
+		String y = matcher.group(3);
+
+		String[] checkVariable = CheckVariable(name, blockVars);
+
+		// Check if the variable exists
+		if (checkVariable[0].equals("")) {
+			System.out.println("Error in parsing Move statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Variable \"%s\" does not exist\n", start, name));
+			return " ";
+		}
+
+		// Check if the variable is a GUI type
+		if (TypeGui(checkVariable[0], start).equals("")){
+			System.out.println("Error in parsing Move statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Variable \"%s\" is not a GUI type\n", start, name));
+			return " ";
+		}
+
+		// Validate the position
+		String[] xParsed = ParseExpression(x, blockVars);
+		String[] yParsed = ParseExpression(y, blockVars);
+
+		// Check if the x position is valid
+		if (xParsed[0].equals("")){
+			System.out.println("Error in parsing Move statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid position in expression", start));
+			System.out.println(String.format("  Given X value: \"%s\"\n", x));
+			return " ";
+		}
+
+		// Check if the y position is valid
+		if (yParsed[0].equals("")){
+			System.out.println("Error in parsing Move statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid position in expression", start));
+			System.out.println(String.format("  Given Y value: \"%s\"\n", y));
+			return " ";
+		}
+
+		// Test the x type
+		if (!xParsed[0].equals("int") && !xParsed[0].equals("double")){
+			System.out.println("Error in parsing Move statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for X position", start));
+			System.out.println(String.format("  Given X value: \"%s\"\n", x));
+			return " ";
+		}
+
+		// Test the y type
+		if (!yParsed[0].equals("int") && !yParsed[0].equals("double")){
+			System.out.println("Error in parsing Move statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for Y position", start));
+			System.out.println(String.format("  Given Y value: \"%s\"\n", y));
+			return " ";
+		}
+
+		// Move the GUI object
+		return indent + name + ".moveTo(" + xParsed[1] + ", " + yParsed[1] + ");\n";
+	}
+
+	/* ----------------------------- GUI Validation ----------------------------- */
+
+	// Validates a GUI type
+	public static String TypeGui(String type, int start){
+		
+		switch (type) {
+			case "Box":
+				return "Box";
+			case "Circle":
+				return "Circle";
+			case "Line":
+				return "Line";
+			case "Text":
+				return "Text";
+		
+			default:
+				return "";
+		}
+
+	}
+
 	/* -------------------------------------------------------------------------- */
 	/*                               Data Structures                              */
 	/* -------------------------------------------------------------------------- */
