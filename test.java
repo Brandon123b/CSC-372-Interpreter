@@ -126,27 +126,6 @@ class DrawingCanvas extends JPanel {
 
 	public void pie(){
 
-		Box Boxey = new Box();
-		drawableObjects_.add(Boxey);
-		Boxey.moveTo((int)100.0, (int)100.0);
-		Boxey.setSize((int)200, (int)500);
-		Boxey.setColor(new Color((int)255, (int)0, (int)0, (int)50));
-		cirk = new Circle();
-		drawableObjects_.add(cirk);
-		cirk.setRadius((int)30);
-		xPos = 0;
-		line1 = new Line();
-		drawableObjects_.add(line1);
-		line1lx = 0;
-		line1ly = 0;
-		line1rx = 1920;
-		line1ry = 1080;
-		line1.setSize((int)10);
-		Text text1 = new Text();
-		drawableObjects_.add(text1);
-		text1.setText("Hello World!" + "  Goodbye!");
-		text1.moveTo((int)100, (int)100);
-		text1.setSize((int)80);
 	}
 	public void Gameloop(){
 

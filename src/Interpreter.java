@@ -1426,9 +1426,13 @@ public class Interpreter {
 
 		String output;
 
-		// Test ParseExpression
+		// Test ParseExpression (corectly fails)
 		output = ParseExpression("wasdwasd", globalVars)[0];
 		System.out.println("Expr: " + output);	// output: ""
+
+		// Test ParseExpression (Correct)
+		output = ParseExpression("\"wasdwasd\"", globalVars)[0];
+		System.out.println("Expr: " + output);	// output: "String"
 
 		// Test ParseExpression
 		output = ParseExpression("45wasdwasd", globalVars)[0];
