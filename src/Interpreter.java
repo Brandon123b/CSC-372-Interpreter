@@ -18,6 +18,9 @@ public class Interpreter {
 
 	static Map<String, String> globalVars = new HashMap<>();
 
+	static List<Function> functions;
+	static String input;	// Parce Block needs this for some reason (Storing it here for now)
+
 	public static void main(String[] args) {
 
 		// Get input file from command line
@@ -31,10 +34,10 @@ public class Interpreter {
 		}
 
 		// Read input file
-		String input = Utils.ReadFileAsString(inputFile);
+		input = Utils.ReadFileAsString(inputFile);
 
 		// Parse the input into functions
-		List<Function> functions = splitIntoFunctions(input);
+		functions = splitIntoFunctions(input);
 
 		// Check for errors before continuing
 		if (hasError)
@@ -87,7 +90,7 @@ public class Interpreter {
 		sb.append("\tpublic " + function.returnType + " " + function.name + "(" + HandleArgs(function.parameters) + "){\n\n");
 
 		// Add the function body here
-		sb.append(function.body);
+		sb.append(ParseBlock(function.body, "\t\t", input, function.lineNumber, function.lineEndNumber, function));
 
 		// Add the function closing
 		sb.append("\t}\n");
@@ -220,8 +223,8 @@ public class Interpreter {
 			List<Arg> args = ParseArgs(matcher.group(3), lineNumber);
 
 			Function function = new Function(name, args, "", lineNumber);
-			String body = ParseBlock(matcher.group(4), "\t\t", input, lineNumber, endLineNumber, function);
-			function.body = body;
+			function.lineEndNumber = endLineNumber;
+			function.body = matcher.group(4);
 
 			functions.add(function);
 
@@ -249,7 +252,6 @@ public class Interpreter {
 
         return functions;
     }
-
 
 	// Parses the arguments of a function call and returns a list of Arg objects
 	static List<Arg> ParseArgs(String argStr, int lineNumber) {
@@ -790,6 +792,7 @@ public class Interpreter {
 	static Pattern patternStmtSetLine = Pattern.compile("^Set the chords of (.+) to \\((.+), (.+)\\) and \\((.+), (.+)\\)$"); // (x1, y1) and (x2, y2)
 	static Pattern patternStmtSetText = Pattern.compile("^Set the text of (.+) to (.+)$");
 	static Pattern patternStmtSetSize = Pattern.compile("^Set the size of (.+) to (.+)$");
+	static Pattern patternStmtSetOnClick = Pattern.compile("^When (.+) is clicked call (.+)$");
 
 	// Takes a single statement and parces some GUI statement (May return "" if no match and " " if error)
 	public static String ParseGUIStatement(String input, Map<String, String> blockVars, String indent, int start) {
@@ -812,6 +815,10 @@ public class Interpreter {
 			return output;
 		
 		output = StmtSetColor(input, blockVars, indent, start);
+		if (!output.equals(""))
+			return output;
+
+		output = StmtSetOnClick(input, blockVars, indent, start);
 		if (!output.equals(""))
 			return output;
 		
@@ -1107,6 +1114,73 @@ public class Interpreter {
 
 		// Set the color
 		return indent + name + ".setColor(new Color(" + rParsed[1] + ", " + gParsed[1] + ", " + bParsed[1] + ", " + aParsed[1] + "));\n";
+	}
+
+	// Parces an "OnClick" statement
+	public static String StmtSetOnClick(String input, Map<String, String> blockVars, String indent, int start) {
+		
+		Matcher matcher = patternStmtSetOnClick.matcher(input.trim());
+
+		// This is not a "Set OnClick" statement
+		if (!matcher.find())
+			return "";
+		
+		String name = matcher.group(1);
+		String function = matcher.group(2);
+
+		String[] checkVariable = CheckVariable(name, blockVars);
+
+		// Check if the variable exists
+		if (checkVariable[0].equals("")) {
+			System.out.println("Error in parsing Set OnClick statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Variable \"%s\" does not exist\n", start, name));
+			return " ";
+		}
+
+		// Check if the variable is a GUI type
+		if (ParseGuiType(checkVariable[0], start).equals("")){
+			System.out.println("Error in parsing Set OnClick statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Variable \"%s\" is not a GUI type\n", start, name));
+			return " ";
+		}
+
+		Function fn = null;
+		// Check if the function exists
+		for (Function fun : functions) {
+			if (fun.name.equals(function)){
+				fn = fun;
+			}
+		}
+
+		// The function does not exist
+		if (fn == null){
+			System.out.println("Error in parsing Set OnClick statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Function \"%s\" does not exist\n", start, function));
+			return " ";
+		}
+
+		// If fn has 0 args
+		if (fn.parameters.size() == 0){
+			return indent + name + ".setOnClick(obj -> " + function + "());\n";
+		}
+		// 1 arg
+		else if (fn.parameters.size() == 1){
+
+			// Test if the type is the type of the object
+			if (!fn.parameters.get(0).type.equals(checkVariable[0])){
+				System.out.println("Error in parsing Set OnClick statement:");
+				System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for parameter \"%s\"", start, fn.parameters.get(0).type));
+				System.out.println(String.format("  Expected a function with parameter of type " + checkVariable[0] + "\n"));
+				return " ";
+			}
+			
+			return indent + name + ".setOnClick(obj -> " + function + "((" + fn.parameters.get(0).type + ")obj));\n";
+		}
+
+		// Error if the function has more than 1 arg
+		System.out.println("Error in parsing Set OnClick statement:");
+		System.out.println(String.format("  SYNTAX ERROR: (line %d) Function \"%s\" has too many parameters\n", start, function));
+		return " ";
 	}
 
 	// Parses a "Set radius" statement
@@ -1472,6 +1546,7 @@ public class Interpreter {
 		public List<Arg> parameters;		// The parameters of the function
 		public String body;				// The body of the function
 		public int lineNumber;			// The line number of the function call 
+		public int lineEndNumber;
 		public String returnType;
 
 		public Function(String name, List<Arg> parameters, String body, int lineNumber){

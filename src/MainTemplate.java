@@ -120,7 +120,7 @@ abstract class DrawableObject {
 	protected double x, y; // Position
 	protected Color color;
 
-	private Consumer<Integer> onClicked = input -> {
+	private Consumer<DrawableObject> onClicked = input -> {
 	}; // Default empty lambda
 
 	public DrawableObject(int x, int y, Color color) {
@@ -136,7 +136,7 @@ abstract class DrawableObject {
 	}
 
 	// Sets the onClicked lambda
-	public void setOnClicked(Consumer<Integer> onClicked) {
+	public void setOnClick(Consumer<DrawableObject> onClicked) {
 		this.onClicked = onClicked;
 	}
 
@@ -147,7 +147,7 @@ abstract class DrawableObject {
 
 	// Calls the onClicked lambda
 	public void onClick() {
-		onClicked.accept(0);
+		onClicked.accept(this);
 	}
 
 	// Draws the object to the Graphics object

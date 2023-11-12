@@ -161,6 +161,7 @@ class DrawingCanvas extends JPanel {
 		sun.setRadius(sunRadius);
 		sun.setColor(new Color(255, 255, 102, 255));
 		sun.moveTo(sunPosx, sunPosy);
+		sun.setOnClick(obj -> ClickSun((Circle)obj));
 		sunLines1 = new Line();
 		drawableObjects_.add(sunLines1);
 		sunLines2 = new Line();
@@ -296,6 +297,21 @@ class DrawingCanvas extends JPanel {
 		startY = sunPosy+y*sunLinesGap;
 		sunLines12.setLine(startX, startY, startX+x*sunLinesLength/2, startY+y*sunLinesLength/2);
 	}
+	public void ClickSun(Circle tempSun){
+
+ 		sunLines1.setColor(new Color(255, 0, 0, 255));
+		sunLines2.setColor(new Color(255, 0, 0, 255));
+		sunLines3.setColor(new Color(255, 0, 0, 255));
+		sunLines4.setColor(new Color(255, 0, 0, 255));
+		sunLines5.setColor(new Color(255, 0, 0, 255));
+		sunLines6.setColor(new Color(255, 0, 0, 255));
+		sunLines7.setColor(new Color(255, 0, 0, 255));
+		sunLines8.setColor(new Color(255, 0, 0, 255));
+		sunLines9.setColor(new Color(255, 0, 0, 255));
+		sunLines10.setColor(new Color(255, 0, 0, 255));
+		sunLines11.setColor(new Color(255, 0, 0, 255));
+		sunLines12.setColor(new Color(255, 0, 0, 255));
+	}
 
 
 }
@@ -308,7 +324,7 @@ abstract class DrawableObject {
 	protected double x, y; // Position
 	protected Color color;
 
-	private Consumer<Integer> onClicked = input -> {
+	private Consumer<DrawableObject> onClicked = input -> {
 	}; // Default empty lambda
 
 	public DrawableObject(int x, int y, Color color) {
@@ -324,7 +340,7 @@ abstract class DrawableObject {
 	}
 
 	// Sets the onClicked lambda
-	public void setOnClicked(Consumer<Integer> onClicked) {
+	public void setOnClick(Consumer<DrawableObject> onClicked) {
 		this.onClicked = onClicked;
 	}
 
@@ -335,7 +351,7 @@ abstract class DrawableObject {
 
 	// Calls the onClicked lambda
 	public void onClick() {
-		onClicked.accept(0);
+		onClicked.accept(this);
 	}
 
 	// Draws the object to the Graphics object

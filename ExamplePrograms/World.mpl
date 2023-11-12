@@ -21,6 +21,9 @@ Begin a function called Init.
 	Set the color of sun to (255, 255, 102, 255).
 	Move sun to sunPosx and sunPosy.
 
+	# OnClick
+	When sun is clicked call ClickSun.
+
 	# Create some sun lines
 	Create a global Line called sunLines1.
 	Create a global Line called sunLines2.
@@ -74,9 +77,6 @@ Begin a function called Init.
 	Set global sunLineY to 1.0.
 
 Leave the function.
-
-
-
 
 Begin a function called Gameloop. 
 
@@ -173,4 +173,27 @@ Begin a function called Gameloop.
 	Set startY to sunPosy + y * sunLinesGap.
 	Set the chords of sunLines12 to (startX, startY) and (startX + x * sunLinesLength / 2, startY + y * sunLinesLength / 2).
 	
+Leave the function.
+
+Begin a function called ClickSun with a Circle called tempSun.
+
+	# If the sun is clicked, change the color of the sun
+	Set the color of sun to (0, 0, 0, 255).
+
+	# Set all sunlines to Red
+	Set the color of sunLines1 to (255, 0, 0, 255).
+	Set the color of sunLines2 to (255, 0, 0, 255).
+	Set the color of sunLines3 to (255, 0, 0, 255).
+	Set the color of sunLines4 to (255, 0, 0, 255).
+	Set the color of sunLines5 to (255, 0, 0, 255).
+	Set the color of sunLines6 to (255, 0, 0, 255).
+	Set the color of sunLines7 to (255, 0, 0, 255).
+	Set the color of sunLines8 to (255, 0, 0, 255).
+	Set the color of sunLines9 to (255, 0, 0, 255).
+	Set the color of sunLines10 to (255, 0, 0, 255).
+	Set the color of sunLines11 to (255, 0, 0, 255).
+	Set the color of sunLines12 to (255, 0, 0, 255).
+
+	
+
 Leave the function.

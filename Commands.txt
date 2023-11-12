@@ -43,7 +43,10 @@ GUI:
 	Move <Var> to <expr> and <expr>.				# x and y pos
 	Remove <var> from the canvas.					# All GUI objects are auto added. This is to remove them.
 	Set the color of <Var> to (r, g, b, a).			# Specify color
-	If <Var> is clicked call function <function>	# Lets do Events! (Unfinished)
+
+	# The function can have no parameters
+	# Or it can have one parameter of the correct GUI type
+	When <Var> is clicked, call <function>.			
 
 	// Circle
 	Set the radius of Circle <Var> to <expr>		# Radius
