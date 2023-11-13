@@ -441,21 +441,11 @@ public class Interpreter {
 					sb.append(indent + "}\n");
 				}
 			} else if (matchers.get("varSet").find()) {
-				String tmp = ParseVarSet(matchers.get("varSet").group(1), 
-					matchers.get("varSet").group(2), false, localVars, file, start, end, curLine);
-				if (tmp.equals("")) {
-					error.print("SYNTAX ERROR: unable to parse variable assignment statement", curLine);
-				} else {
-					sb.append(indent + tmp + ";\n");
-				}
+				sb.append(indent + ParseVarSet(matchers.get("varSet").group(1), 
+					matchers.get("varSet").group(2), false, localVars, file, start, end, curLine, error) + "\n");
 			} else if (matchers.get("globalVarSet").find()) {
-				String tmp = ParseVarSet(matchers.get("globalVarSet").group(1), 
-					matchers.get("globalVarSet").group(2), true, localVars, file, start, end, curLine);
-				if (tmp.equals("")) {
-					error.print("SYNTAX ERROR: unable to parse variable assignment statement", curLine);
-				} else {
-					sb.append(indent + tmp + ";\n");
-				}
+				sb.append(indent + ParseVarSet(matchers.get("globalVarSet").group(1), 
+					matchers.get("globalVarSet").group(2), true, localVars, file, start, end, curLine, error) + "\n");
 			} else if (matchers.get("functionCall").find()) {
 				sb.append(indent + ParseFunctionCall(line) + "\n");
 			} else if (matchers.get("consoleWrite").find()) {
@@ -492,13 +482,12 @@ public class Interpreter {
 	}
 
 	public static String ParseVarSet(String name, String val, boolean global, 
-		Map<String, String> blockVars, String file, int start, int end, int curLine) {
+		Map<String, String> blockVars, String file, int start, int end, int curLine, Error error) {
 
 		String[] valParsed = ParseExpression(val, blockVars);
 		if (valParsed[0].equals("")) {
 			// error
-			System.out.println("SYNTAX ERROR: unable to parse expression " + val);
-			Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+			error.print("SYNTAX ERROR: unable to parse expression " + val, curLine);
 			return "";
 		}
 		
@@ -511,17 +500,16 @@ public class Interpreter {
 
 		if (type.equals("") && global) {
 			globalVars.put(name, valParsed[0]);
-			return name + " = " + valParsed[1];
+			return name + " = " + valParsed[1] + ";";
 		} else if (type.equals("")) {
 			blockVars.put(name, valParsed[0]);
-			return valParsed[0] + " " + name + " = " + valParsed[1];
+			return valParsed[0] + " " + name + " = " + valParsed[1] + ";";
 		} else if (type.equals(valParsed[0])) {
-			return name + " = " + valParsed[1];
+			return name + " = " + valParsed[1] + ";";
 		} else {
 			// error
-			System.out.println("SYNTAX ERROR: type mismatch: " + name + " is defined as type "
-				+ type + ", but " + valParsed[1] + " is type " + valParsed[0]);
-			Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+			error.print("SYNTAX ERROR: type mismatch: " + name + " is defined as type "
+				+ type + ", but " + valParsed[1] + " is type " + valParsed[0], curLine);
 			return "";
 		}
 	}
