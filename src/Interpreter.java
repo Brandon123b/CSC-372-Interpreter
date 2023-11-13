@@ -328,7 +328,7 @@ public class Interpreter {
 		boolean inLineComment = false;
 		boolean inBlockComment = false;
 		for (int i = 0; i < input.length(); i++) {
-			if (input.charAt(i) == '"') {
+			if (!inLineComment && !inBlockComment && input.charAt(i) == '"') {
 				inString = !inString;
 			}
 
@@ -477,7 +477,6 @@ public class Interpreter {
 			return "";
 		}
 
-		// if we get here we're done parsing and we didn't find any errors
 		return sb.toString();
 	}
 
