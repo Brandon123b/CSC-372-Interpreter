@@ -2,6 +2,8 @@
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Stack;
+import java.lang.Math;
+import java.util.function.ObjIntConsumer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -369,6 +371,20 @@ public class Interpreter {
 	public static String ParseBlock(List<String> input, String indent, 
 		String file, int start, int end, Map<String, String> blockVars, Function fn) {
 
+		Error error = (msg, line) -> {
+			System.out.println(msg);
+			Utils.PrintParseError(file, Math.max(start, line - 5), Math.min(end, line + 5), line, line + 1);
+			hasError = true;
+		};
+		
+		Map<String, String> localVars = new HashMap<>(blockVars);
+
+		for (Arg a : fn.parameters) {
+			localVars.put(a.name, a.type);
+		}
+
+		Stack<Map<String, String>> storedLocalVars = new Stack<>();
+		
 		StringBuilder sb = new StringBuilder();
 		Stack<String> nesting = new Stack<>();
 
@@ -397,44 +413,46 @@ public class Interpreter {
 			}
 
 			if (matchers.get("loopStart").find()) {
+				storedLocalVars.push(localVars);
+				localVars = new HashMap<>(localVars);
 				nesting.push("while");
-				sb.append(indent + "while (" + ParseEvalExpr(matchers.get("loopStart").group(1), blockVars) + ") {\n");
+				sb.append(indent + "while (" + ParseEvalExpr(matchers.get("loopStart").group(1), localVars) + ") {\n");
 				indent += "\t";
 			} else if (matchers.get("loopEnd").find()) {
 				if (nesting.empty() || !nesting.pop().equals("while")) {
-					// error
-					System.out.println("SYNTAX ERROR: tried to exit a nonexistent while statement");
-					Utils.PrintParseError(file, start, end, curLine, curLine + 1);
-					return "";
+					error.print("SYNTAX ERROR: tried to exit a nonexistent while statement", curLine);
+				} else {
+					localVars = storedLocalVars.pop();
+					indent = indent.substring(1);
+					sb.append(indent + "}\n");
 				}
-				indent = indent.substring(1);
-				sb.append(indent + "}\n");
 			} else if (matchers.get("condStart").find()) {
+				storedLocalVars.push(localVars);
+				localVars = new HashMap<>(localVars);
 				nesting.push("if");
-				sb.append(indent + "if (" + ParseEvalExpr(matchers.get("condStart").group(1), blockVars) + ") {\n");
+				sb.append(indent + "if (" + ParseEvalExpr(matchers.get("condStart").group(1), localVars) + ") {\n");
 				indent += "\t";
 			} else if (matchers.get("condEnd").find()) {
 				if (nesting.empty() || !nesting.pop().equals("if")) {
-					// error
-					System.out.println("SYNTAX ERROR: tried to exit a nonexistent if statement");
-					Utils.PrintParseError(file, start, end, curLine, curLine + 1);
-					return "";
+					error.print("SYNTAX ERROR: tried to exit a nonexistent if statement", curLine);
+				} else {
+					localVars = storedLocalVars.pop();
+					indent = indent.substring(1);
+					sb.append(indent + "}\n");
 				}
-				indent = indent.substring(1);
-				sb.append(indent + "}\n");
 			} else if (matchers.get("varSet").find()) {
 				String tmp = ParseVarSet(matchers.get("varSet").group(1), 
-					matchers.get("varSet").group(2), false, blockVars, file, start, end, curLine);
+					matchers.get("varSet").group(2), false, localVars, file, start, end, curLine);
 				if (tmp.equals("")) {
-					return "";
+					error.print("SYNTAX ERROR: unable to parse variable assignment statement", curLine);
 				} else {
 					sb.append(indent + tmp + ";\n");
 				}
 			} else if (matchers.get("globalVarSet").find()) {
 				String tmp = ParseVarSet(matchers.get("globalVarSet").group(1), 
-					matchers.get("globalVarSet").group(2), true, blockVars, file, start, end, curLine);
+					matchers.get("globalVarSet").group(2), true, localVars, file, start, end, curLine);
 				if (tmp.equals("")) {
-					return "";
+					error.print("SYNTAX ERROR: unable to parse variable assignment statement", curLine);
 				} else {
 					sb.append(indent + tmp + ";\n");
 				}
@@ -442,16 +460,16 @@ public class Interpreter {
 				sb.append(indent + ParseFunctionCall(line) + "\n");
 			} else if (matchers.get("consoleWrite").find()) {
 				sb.append(indent + "System.out.println(" 
-					+ ParseConsoleWrite(matchers.get("consoleWrite").group(1), blockVars, file, start, end, curLine)
+					+ ParseConsoleWrite(matchers.get("consoleWrite").group(1), localVars, file, start, end, curLine)
 					+ ");\n");
 			} else if (matchers.get("returnStmt").find()) {
 				sb.append(indent + "return "
-					+ ParseReturnStmt(matchers.get("returnStmt").group(1), blockVars, fn, file, start, end, curLine)
+					+ ParseReturnStmt(matchers.get("returnStmt").group(1), localVars, fn, file, start, end, curLine)
 					+ ";\n");
 			} else {
 
 				// Try a GUI statement
-				String guiStmt = ParseGUIStatement(line, blockVars, indent, curLine);
+				String guiStmt = ParseGUIStatement(line, localVars, indent, curLine);
 
 				// GUI statement found
 				if (guiStmt != null && !guiStmt.equals("")) {
@@ -459,17 +477,13 @@ public class Interpreter {
 					continue;
 				}
 
-				// error
-				System.out.println("SYNTAX ERROR: unrecognized statement \"" + line + "\"");
-				Utils.PrintParseError(file, start, end, curLine, curLine + 1);
-				return "";
+				error.print("SYNTAX ERROR: unrecognized statement \"" + line + "\"", curLine);
 			}
 		}
 
 		// make sure all if and while statements were closed
 		if (!nesting.empty()) {
-			System.out.println("SYNTAX ERROR: " + nesting.pop() + " statement was entered, but never exited");
-			Utils.PrintParseError(file, start, end, start, end);
+			error.print("SYNTAX ERROR: " + nesting.pop() + " statement was entered, but never exited", curLine);
 			return "";
 		}
 
@@ -1585,4 +1599,9 @@ public class Interpreter {
 			System.out.println("	Arg (" + name + ": " + type + ")");
 		}
 	}
+}
+
+@FunctionalInterface
+interface Error {
+	void print(String msg, int line);
 }
