@@ -374,7 +374,8 @@ public class Interpreter {
 
 		Error error = (msg, line) -> {
 			System.out.println(msg);
-			Utils.PrintParseError(file, Math.max(start, line - 5), Math.min(end, line + 5), line, line + 1);
+			Utils.PrintParseError(file, Math.max(fn.lineNumber, line - 5),
+				Math.min(fn.lineEndNumber, line + 5), line, line + 1);
 			hasError = true;
 		};
 		
@@ -402,7 +403,7 @@ public class Interpreter {
 		patterns.put("consoleWrite", Pattern.compile("^Print (.+) to the console$"));
 		patterns.put("returnStmt",   Pattern.compile("^Return (.+) to the caller$"));
 
-		int curLine = start;
+		int curLine = fn.lineNumber;
 
 		for (int i = 0; i < input.size(); i++) {
 			curLine += input.get(i).chars().filter(c -> c == '\n').count();
@@ -443,19 +444,19 @@ public class Interpreter {
 				}
 			} else if (matchers.get("varSet").find()) {
 				sb.append(indent + ParseVarSet(matchers.get("varSet").group(1), 
-					matchers.get("varSet").group(2), false, localVars, file, start, end, curLine, error) + "\n");
+					matchers.get("varSet").group(2), false, localVars, file, fn, curLine, error) + "\n");
 			} else if (matchers.get("globalVarSet").find()) {
 				sb.append(indent + ParseVarSet(matchers.get("globalVarSet").group(1), 
-					matchers.get("globalVarSet").group(2), true, localVars, file, start, end, curLine, error) + "\n");
+					matchers.get("globalVarSet").group(2), true, localVars, file, fn, curLine, error) + "\n");
 			} else if (matchers.get("functionCall").find()) {
 				sb.append(indent + ParseFunctionCall(line) + "\n");
 			} else if (matchers.get("consoleWrite").find()) {
 				sb.append(indent + "System.out.println(" 
-					+ ParseConsoleWrite(matchers.get("consoleWrite").group(1), localVars, file, start, end, curLine)
+					+ ParseConsoleWrite(matchers.get("consoleWrite").group(1), localVars, file, fn, curLine, error)
 					+ ");\n");
 			} else if (matchers.get("returnStmt").find()) {
 				sb.append(indent + "return "
-					+ ParseReturnStmt(matchers.get("returnStmt").group(1), localVars, fn, file, start, end, curLine)
+					+ ParseReturnStmt(matchers.get("returnStmt").group(1), localVars, file, fn, curLine, error)
 					+ ";\n");
 			} else {
 
@@ -482,7 +483,7 @@ public class Interpreter {
 	}
 
 	public static String ParseVarSet(String name, String val, boolean global, 
-		Map<String, String> blockVars, String file, int start, int end, int curLine, Error error) {
+		Map<String, String> blockVars, String file, Function fn, int curLine, Error error) {
 
 		String[] valParsed = ParseExpression(val, blockVars);
 		if (valParsed[0].equals("")) {
@@ -688,14 +689,13 @@ public class Interpreter {
 	}
 
 	public static String ParseReturnStmt(String input, Map<String, String> blockVars,
-		Function fn, String file, int start, int end, int curLine) {
+		String file, Function fn, int curLine, Error error) {
 
 		String[] parsed = ParseExpression(input, blockVars);
 		
 		if (parsed[0].equals("")) {
 			// error
-			System.out.println("SYNTAX ERROR: invalid expression in return statement");
-			Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+			error.print("SYNTAX ERROR: invalid expression in return statement", curLine);
 			return "";
 		}
 
@@ -706,22 +706,20 @@ public class Interpreter {
 			return parsed[1];
 		} else {
 			// error return type mismatch
-			System.out.println("SYNTAX ERROR: function return type has already been defined as " 
-				+ fn.returnType + ", but return statement received an incompatible value");
-			Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+			error.print("SYNTAX ERROR: function return type has already been defined as " 
+				+ fn.returnType + ", but return statement received an incompatible value", curLine);
 			return "";
 		}
 	}
 
 	public static String ParseConsoleWrite(String input, Map<String, String> blockVars, 
-		String file, int start, int end, int curLine) {
+		String file, Function fn, int curLine, Error error) {
 		
 		String[] parsed = ParseExpression(input, blockVars);
 		
 		if (parsed[0].equals("")) {
 			// error
-			System.out.println("SYNTAX ERROR: invalid expression in print statement");
-			Utils.PrintParseError(file, start, end, curLine, curLine + 1);
+			error.print("SYNTAX ERROR: invalid expression in print statement: " + input, curLine);
 			return "";
 		} else {
 			return parsed[1];
