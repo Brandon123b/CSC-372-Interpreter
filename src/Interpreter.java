@@ -3,7 +3,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Stack;
 import java.lang.Math;
-import java.util.function.ObjIntConsumer;
+import java.util.Arrays;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -88,11 +88,13 @@ public class Interpreter {
 	public static String HandleFunction(Function function){
 		StringBuilder sb = new StringBuilder();
 
+		String body = ParseBlock(function.body, "\t\t", input, function);
+
 		// Add the function declaration
 		sb.append("\tpublic " + function.returnType + " " + function.name + "(" + HandleArgs(function.parameters) + "){\n\n");
 
 		// Add the function body here
-		sb.append(ParseBlock(function.body, "\t\t", input, function.lineNumber, function.lineEndNumber, function));
+		sb.append(body);
 
 		// Add the function closing
 		sb.append("\t}\n");
@@ -321,7 +323,7 @@ public class Interpreter {
 	}
 
 	// Parse a block by matching expressions until either the block is empty or no match is found
-	public static String ParseBlock(String input, String indent, String file, int start, int end, Function fn) {
+	public static String ParseBlock(String input, String indent, String file, Function fn) {
 		List<String> stmts = new ArrayList<>();
 		StringBuilder stmt = new StringBuilder();
 		boolean inString = false;
@@ -366,11 +368,11 @@ public class Interpreter {
 				stmt.append(input.charAt(i));
 			}
 		}
-		return ParseBlock(stmts, indent, file, start, end, new HashMap<>(), fn);
+		return ParseBlock(stmts, indent, file, new HashMap<>(), fn);
 	}
 
 	public static String ParseBlock(List<String> input, String indent, 
-		String file, int start, int end, Map<String, String> blockVars, Function fn) {
+		String file, Map<String, String> blockVars, Function fn) {
 
 		Error error = (msg, line) -> {
 			System.out.println(msg);
@@ -451,13 +453,11 @@ public class Interpreter {
 			} else if (matchers.get("functionCall").find()) {
 				sb.append(indent + ParseFunctionCall(line) + "\n");
 			} else if (matchers.get("consoleWrite").find()) {
-				sb.append(indent + "System.out.println(" 
-					+ ParseConsoleWrite(matchers.get("consoleWrite").group(1), localVars, file, fn, curLine, error)
-					+ ");\n");
+				sb.append(indent + ParseConsoleWrite(matchers.get("consoleWrite").group(1),
+					localVars, file, fn, curLine, error) + "\n");
 			} else if (matchers.get("returnStmt").find()) {
-				sb.append(indent + "return "
-					+ ParseReturnStmt(matchers.get("returnStmt").group(1), localVars, file, fn, curLine, error)
-					+ ";\n");
+				sb.append(indent + ParseReturnStmt(matchers.get("returnStmt").group(1),
+					localVars, file, fn, curLine, error) + "\n");
 			} else {
 
 				// Try a GUI statement
@@ -701,9 +701,9 @@ public class Interpreter {
 
 		if (fn.returnType.equals("void") || fn.returnType.equals(parsed[0])) {
 			fn.returnType = parsed[0];
-			return parsed[1];
+			return "return " + parsed[1] + ";";
 		} else if (fn.returnType.equals("double") && parsed[0].equals("int")) {
-			return parsed[1];
+			return "return " + parsed[1] + ";";
 		} else {
 			// error return type mismatch
 			error.print("SYNTAX ERROR: function return type has already been defined as " 
@@ -722,7 +722,7 @@ public class Interpreter {
 			error.print("SYNTAX ERROR: invalid expression in print statement: " + input, curLine);
 			return "";
 		} else {
-			return parsed[1];
+			return "System.out.println(" + parsed[1] + ");";
 		}
 	}
 
