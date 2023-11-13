@@ -337,9 +337,10 @@ public class Interpreter {
 				continue;
 			}
 
-			if ((input.charAt(i) == '.' && (i <= 0 || !Character.isDigit(input.charAt(i - 1)) 
+			if (!inLineComment && !inBlockComment
+				&& ((input.charAt(i) == '.' && (i <= 0 || !Character.isDigit(input.charAt(i - 1)) 
 				|| i + 1 >= input.length() || !Character.isDigit(input.charAt(i + 1))))
-			 	|| input.charAt(i) == ':') {
+			 	|| input.charAt(i) == ':')) {
 				
 				stmts.add(stmt.toString());
 				stmt = new StringBuilder();
