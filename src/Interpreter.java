@@ -521,46 +521,53 @@ public class Interpreter {
 
 	public static String ParseEvalExpr(String input, Map<String, String> blockVars) {
 		StringBuilder sb = new StringBuilder();
-		String[] tokens = input.split("((?<=\\(|\\)|\\band|\\bor|\\bnot)|(?=\\(|\\)|\\band|\\bor|\\bnot))");
-		Stack<Boolean> parens = new Stack<>();
-		String prev = "";
-		boolean prevWasOp = false;
+		String tokenRegex = "\\(|\\)|\\band|\\bor|\\bnot";
+		String[] tokens = input.split("((?<=" + tokenRegex + ")|(?=" + tokenRegex + "))");
+		int parens = 0;
+		String tok;
+		Stack<Character> validate = new Stack<>();
+
+		Pattern binOps = Pattern.compile("^and$|^or$");
+		Pattern unOps  = Pattern.compile("^not$");
 
 		for (int i = 0; i < tokens.length; i++) {
-			if (Pattern.compile("\\s").matcher(tokens[i]).matches()) {
+			tok = tokens[i].trim();
+			if (tok.equals("")) {
 				continue;
-			} else if (tokens[i].equals("(")) {
-				parens.push(true);
+			} else if (tok.equals("(")) {
+				if (!validate.empty() && validate.peek() == 'v') {
+					// error val before open paren
+					return "";
+				}
+				parens++;
 				sb.append("(");
-			} else if (tokens[i].equals(")")) {
-				if (parens.empty()) {
-					// error unbalanced parens
+			} else if (tok.equals(")")) {
+				if (parens == 0 || validate.peek() == 'o') {
+					// error unbalanced parens OR
+					// error op before close paren
 					return "";
 				}
-				parens.pop();
+				parens--;
 				sb.append(")");
-			} else if (tokens[i].equals("and") || tokens[i].equals("or")) {
-				if (i <= 0 || i + 1 >= tokens.length 
-				|| tokens[i - 1].equals("and") || tokens[i - 1].equals("or") || tokens[i - 1].equals("not")
-				|| tokens[i + 1].equals("and") || tokens[i + 1].equals("or")) {
-
-					// error invalid operands to binary op
+			} else if (binOps.matcher(tok).matches()) {
+				if (validate.empty() || validate.peek() != 'v') {
+					// error invalid left operand to binary op
 					return "";
 				}
+
+				validate.push('b');
 
 				if (tokens[i].equals("and")) {
 					sb.append("&&");
 				} else {
 					sb.append("||");
 				}
-			} else if (tokens[i].equals("not")) {
-				if (i + 1 >= tokens.length || tokens[i + 1].equals("and") || tokens[i + 1].equals("or")
-					|| tokens[i + 1].equals("not")) {
-					
-					// error invalid operand to unary op
+			} else if (tok.equals("not")) {
+				if (!validate.empty() && validate.peek() == 'u') {
+					// error consecutive not
 					return "";
 				}
-
+				validate.push('u');
 				sb.append("!");
 			} else {
 				String[] var = CheckVariable(tokens[i], blockVars);
@@ -576,13 +583,15 @@ public class Interpreter {
 					// not a boolean
 					return "";
 				}
+				validate.push('v');
 			}
 		}
 
-		if (parens.empty()) {
+		if (parens == 0 && (validate.empty() || validate.peek() == 'v')) {
 			return sb.toString();
 		} else {
-			// error unbalanced parens
+			// error unbalanced parens OR
+			// error ended with op
 			return "";
 		}
 	}
@@ -622,70 +631,89 @@ public class Interpreter {
 
 	public static String[] ParseMathExpr(String input, Map<String, String> blockVars) {
 		StringBuilder sb = new StringBuilder();
-		Pattern validate = Pattern.compile("^[()+\\-*/%A-Za-z0-9\\s]+$");
-		Matcher validateM = validate.matcher(input);
-		if (!validateM.matches()) {
-			// error non-mathematic characters present
-			return new String[]{"", ""};
-		}
+		String tokenRegex = "\\(|\\)|\\+|-|\\*|/|%";
+		String[] tokens = input.split("((?<=" + tokenRegex + ")|(?=" + tokenRegex + "))");
+		int parens = 0;
+		String tok;
+		String[] ret = new String[]{"int", ""};
+		Stack<Character> validate = new Stack<>();
 
-		Pattern p = Pattern.compile("\\(|\\)|\\+|-|\\*|\\/|%|[0-9]+|[A-Za-z0-9]+|[0-9]+\\.[0-9]+");
-		Matcher m = p.matcher(input);
-		Pattern atomPattern = Pattern.compile("^[0-9]+$|^[A-Za-z0-9]+$|^[0-9]\\.[0-9]$");
-		Stack<Boolean> parens = new Stack<>();
-		String type = "int";
-		String prev = "";
-		boolean prevWasOp = false;
-		String[] var;
-		String[] val;
+		Pattern ops = Pattern.compile("^[+\\-*/%]$");
 
-		while(m.find()) {
-			var = CheckVariable(m.group(), blockVars);
-			val = ParseValue(m.group());
-			if (prevWasOp) {
-				Matcher atom = atomPattern.matcher(m.group());
-				if (var[0].equals("") && val[0].equals("") && !m.group().equals("(")) {
-					// error illegal operator placement
-					return new String[]{"", ""};
+		for (int i = 0; i < tokens.length; i++) {
+			tok = tokens[i].trim();
+			if (tok.equals("")) {
+				continue;
+			} else if (tok.equals("(")) {
+				if (!validate.empty() && validate.peek() == 'v') {
+					// error opening paren after value
+					ret[0] = "";
+					return ret;
 				}
-				prevWasOp = false;
-			}
-
-			if (m.group().equals("(")) {
-				parens.push(true);
-			} else if (m.group().equals(")")) {
-				if (parens.empty()) {
-					// error unbalanced parens
-					return new String[]{"", ""};
+				parens++;
+				sb.append("(");
+			} else if (tok.equals(")")) {
+				if (parens == 0 || validate.peek() == 'o') {
+					// error unbalanced parens OR
+					// error closing paren after op
+					ret[0] = "";
+					return ret;
 				}
-				parens.pop();
-			} else if (var[0].equals("int") || val[0].equals("int")) {
-				// nop
-			} else if (var[0].equals("double") || val[0].equals("double")) {
-				type = "double";
-			} else if (!var[0].equals("") && !val[0].equals("")) {
-				// error non-numeric value
-				return new String[]{"", ""};
+				parens--;
+				sb.append(")");
+			} else if (ops.matcher(tok).matches()) {
+				if (validate.empty() || validate.peek() != 'v') {
+					// error op following op
+					ret[0] = "";
+					return ret;
+				}
+				validate.push('o');
+				sb.append(tok);
 			} else {
-				// operator -- make sure prev is an atom or close paren and next is an atom or open paren
-				Matcher atom = atomPattern.matcher(prev);
-				if (!atom.matches() && !prev.equals(")")) {
-					// error illegal operator placement
-					return new String[]{"", ""};
+				if (!validate.empty() && validate.peek() != 'o') {
+					// error value following value
+					ret[0] = "";
+					return ret;
 				}
-				prevWasOp = true;
+
+				String[] var = CheckVariable(tok, blockVars);
+				String[] val = ParseValue(tok);
+				boolean fail = true;
+
+				switch(var[0]) {
+					case "double":
+						ret[0] = "double";
+					case "int":
+						sb.append(var[1]);
+						fail = false;
+				}
+
+				switch(val[0]) {
+					case "double":
+						ret[0] = "double";
+					case "int":
+						sb.append(val[1]);
+						fail = false;
+				}
+
+				if (fail) {
+					ret[0] = "";
+					return ret;
+				}
+
+				validate.push('v');
 			}
-
-			sb.append(m.group());
-			prev = m.group();
 		}
 
-		if (parens.empty()) {
-			return new String[]{type, sb.toString()};
+		if (parens == 0 && (validate.empty() || validate.peek() == 'v')) {
+			ret[1] = sb.toString();
 		} else {
-			// error unbalanced parens
-			return new String[]{"", ""};
+			// error unbalanced parens OR
+			// error ended with op
+			ret[0] = "";
 		}
+
+		return ret;
 	}
 
 	public static String ParseReturnStmt(String input, Map<String, String> blockVars,
@@ -766,9 +794,9 @@ public class Interpreter {
 	public static String[] ParseValue(String input) {
 		input = input.trim();
 		String[] ret = new String[]{"", input};
-		if (Pattern.compile("[0-9]+").matcher(input).matches()) {
+		if (Pattern.compile("^[0-9]+$").matcher(input).matches()) {
 			ret[0] = "int";
-		} else if (Pattern.compile("[0-9]+\\.[0-9]+").matcher(input).matches()) {
+		} else if (Pattern.compile("^[0-9]+\\.[0-9]+$").matcher(input).matches()) {
 			ret[0] = "double";
 		} else if (Pattern.compile("^\".*\"$").matcher(input).matches()) {
 			ret[0] = "String";
