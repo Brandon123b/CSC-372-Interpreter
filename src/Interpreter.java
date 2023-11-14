@@ -521,7 +521,7 @@ public class Interpreter {
 
 	public static String ParseEvalExpr(String input, Map<String, String> blockVars) {
 		StringBuilder sb = new StringBuilder();
-		String tokenRegex = "\\(|\\)|\\band|\\bor|\\bnot";
+		String tokenRegex = "\\(|\\)|\\band\\b|\\bor\\b|\\bnot\\b";
 		String[] tokens = input.split("((?<=" + tokenRegex + ")|(?=" + tokenRegex + "))");
 		int parens = 0;
 		String tok;
