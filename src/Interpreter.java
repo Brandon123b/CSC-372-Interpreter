@@ -19,6 +19,7 @@ public class Interpreter {
 	static boolean hasError = false;
 
 	static Map<String, String> globalVars = new HashMap<>();
+	static Map<String, String> functionCalls = new HashMap<>();
 
 	static List<Function> functions;
 	static String input;	// Parce Block needs this for some reason (Storing it here for now)
@@ -112,6 +113,8 @@ public class Interpreter {
 			// TODO: Boolean fix
 			if (arg.type.equals("bool"))
 				sb.append("boolean" + " " + arg.name + ", ");	// bool is actually boolean in Java
+			else if (arg.type.equals("string"))
+				sb.append("String " + " " + arg.name + ", ");
 			else
 				sb.append(arg.type + " " + arg.name + ", ");
 		}
@@ -451,7 +454,7 @@ public class Interpreter {
 				sb.append(indent + ParseVarSet(matchers.get("globalVarSet").group(1), 
 					matchers.get("globalVarSet").group(2), true, localVars, file, fn, curLine, error) + "\n");
 			} else if (matchers.get("functionCall").find()) {
-				sb.append(indent + ParseFunctionCall(line) + "\n");
+				sb.append(indent + ParseFunctionCall(line, localVars, file, fn, curLine, error) + "\n");
 			} else if (matchers.get("consoleWrite").find()) {
 				sb.append(indent + ParseConsoleWrite(matchers.get("consoleWrite").group(1),
 					localVars, file, fn, curLine, error) + "\n");
@@ -515,8 +518,105 @@ public class Interpreter {
 		}
 	}
 
-	public static String ParseFunctionCall(String input) {
-		return "";
+	public static String ParseFunctionCall(String input, Map<String, String> blockVars,
+		String file, Function fn, int curLine, Error error) {
+		
+		StringBuilder sb = new StringBuilder();
+
+		Map<String, String> vars = new HashMap<>();
+
+		Pattern fnNameP  = Pattern.compile("Call the function ([^ ]+)");
+		Pattern pattern1 = Pattern.compile("with ([^,\n ]*)");
+		Pattern pattern2 = Pattern.compile(", ([^,\n ]*)");
+		Pattern pattern3 = Pattern.compile("and ([^,\n .]*)");
+
+		Matcher fnNameM  = fnNameP.matcher(input);
+		Matcher matcher1 = pattern1.matcher(input);
+		Matcher matcher2 = pattern2.matcher(input);
+		Matcher matcher3 = pattern3.matcher(input);
+
+		String tmp;
+		int index = -1;
+		int argNum = -1;
+
+		if (fnNameM.find()) {
+			for (int i = 0; i < functions.size(); i++) {
+				if (functions.get(i).name.equals(fnNameM.group(1))) {
+					sb.append(fnNameM.group(1) + "(");
+					index = i;
+					break;
+				}
+			}
+
+			if (index == -1) {
+				error.print("SYNTAX ERROR: function " + fnNameM.group(1) + " not defined", curLine);
+				return "";
+			}
+		} else {
+			error.print("SYNTAX ERROR: invalid function call statement", curLine);
+			return "";
+		}
+
+		if (matcher1.find()) {
+			argNum++;
+			tmp = ParseArg(matcher1.group(1), blockVars, curLine, functions.get(index), 0, error);
+			if (tmp.equals("")) {
+				return "";
+			}
+			sb.append(tmp);
+		}
+
+		while (matcher2.find()) {
+			argNum++;
+			tmp = ParseArg(matcher2.group(1), blockVars, curLine, functions.get(index), argNum, error);
+			if (tmp.equals("")) {
+				return "";
+			}
+			sb.append(", " + tmp);
+		}
+
+		if (matcher3.find()) {
+			argNum++;
+			tmp = ParseArg(matcher3.group(1), blockVars, curLine, functions.get(index), argNum, error);
+			if (tmp.equals("")) {
+				return "";
+			}
+			sb.append(", " + tmp);
+		}
+
+		if (argNum != functions.get(index).parameters.size() - 1) {
+			error.print("SYNTAX ERROR: in call to function " + fnNameM.group(1) + ": expected " + functions.get(index).parameters.size()
+				+ " arguments but found " + (argNum+1), curLine);
+			return "";
+		}
+
+		sb.append(");");
+		return sb.toString();
+	}
+
+	public static String ParseArg(String input, Map<String, String> blockVars, int curLine, Function fn, int argNum, Error error) {
+		String[] tmp = ParseExpression(input, blockVars);
+
+		if (argNum >= fn.parameters.size()) {
+			error.print("SYNTAX ERROR: too many arguments to function " 
+				+ fn.name + ", expected " + fn.parameters.size(), curLine);
+			return "";
+		}
+
+		if (tmp[0].equals("")) {
+			error.print("SYNTAX ERROR: unable to parse function argument " + input, curLine);
+			return "";
+		} else if (fn.parameters.get(argNum).type.equals(tmp[0].toLowerCase())
+			|| (fn.parameters.get(argNum).type.equals("double") && tmp[0].equals("int"))
+			|| (fn.parameters.get(argNum).type.equals("bool") && tmp[0].equals("boolean"))) {
+
+			return tmp[1];
+		} else {
+			error.print("SYNTAX ERROR: in call to function " + fn.name + ", argument number " 
+				+ argNum + ": type mismatch, expected " + fn.parameters.get(argNum).type
+				+ " but found " + tmp[0], curLine);
+			return "";
+		}
 	}
 
 	public static String ParseEvalExpr(String input, Map<String, String> blockVars) {
