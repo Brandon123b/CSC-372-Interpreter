@@ -200,7 +200,7 @@ public class Interpreter {
 	public static List<Function> splitIntoFunctions(String input) {
         List<Function> functions = new ArrayList<>();
 
-		Pattern pattern = Pattern.compile("(\\s*)Begin a function called ([a-zA-Z0-9]+) ?([^.]+)?\\.(.*?)(Leave the function\\.)(\\s*)", Pattern.DOTALL);
+		Pattern pattern = Pattern.compile("(\\s*)Begin a function called ([a-zA-Z0-9]+) ?(that returns an? [^\b.]+)? ?([^.]+)?\\.(.*?)(Leave the function\\.)(\\s*)", Pattern.DOTALL);
         Matcher matcher = pattern.matcher(input);
 
         int lastIndex = 0;
@@ -225,13 +225,15 @@ public class Interpreter {
 		
 			// Add the function call to the list
 			int lineNumber = Utils.getLineNumber(input, matcher.start(2));
-			int endLineNumber = Utils.getLineNumber(input, matcher.start(5)) + 1;
+			int endLineNumber = Utils.getLineNumber(input, matcher.start(6)) + 1;
 			String name = matcher.group(2);
-			List<Arg> args = ParseArgs(matcher.group(3), lineNumber);
+			String returnType = ParseReturnType(matcher.group(3), lineNumber);
+			List<Arg> args = ParseArgs(matcher.group(4), lineNumber);
 
 			Function function = new Function(name, args, "", lineNumber);
 			function.lineEndNumber = endLineNumber;
-			function.body = matcher.group(4);
+			function.returnType = returnType;
+			function.body = matcher.group(5);
 
 			functions.add(function);
 
@@ -323,6 +325,24 @@ public class Interpreter {
 		}
 	
 		return args;
+	}
+
+	public static String ParseReturnType(String input, int lineNumber) {
+		if (input == null) {
+			return "void";
+		}
+		String type = input.split(" ")[3];
+		if (type.equals("int") || type.equals("double")) {
+			return type;
+		} else if (type.equals("bool")) {
+			return "boolean";
+		} else if (type.equals("string")) {
+			return "String";
+		} else {
+			System.err.println("ERROR: unrecognized function return type");
+			hasError = true;
+			return "void";
+		}
 	}
 
 	// Parse a block by matching expressions until either the block is empty or no match is found
@@ -454,7 +474,7 @@ public class Interpreter {
 				sb.append(indent + ParseVarSet(matchers.get("globalVarSet").group(1), 
 					matchers.get("globalVarSet").group(2), true, localVars, file, fn, curLine, error) + "\n");
 			} else if (matchers.get("functionCall").find()) {
-				sb.append(indent + ParseFunctionCall(line, localVars, file, fn, curLine, error) + "\n");
+				sb.append(indent + ParseFunctionCall(line, localVars, curLine, error, true) + "\n");
 			} else if (matchers.get("consoleWrite").find()) {
 				sb.append(indent + ParseConsoleWrite(matchers.get("consoleWrite").group(1),
 					localVars, file, fn, curLine, error) + "\n");
@@ -519,11 +539,9 @@ public class Interpreter {
 	}
 
 	public static String ParseFunctionCall(String input, Map<String, String> blockVars,
-		String file, Function fn, int curLine, Error error) {
+		int curLine, Error error, boolean printErrors) {
 		
 		StringBuilder sb = new StringBuilder();
-
-		Map<String, String> vars = new HashMap<>();
 
 		Pattern fnNameP  = Pattern.compile("Call the function ([^ ]+)");
 		Pattern pattern1 = Pattern.compile("with ([^,\n ]*)");
@@ -549,17 +567,17 @@ public class Interpreter {
 			}
 
 			if (index == -1) {
-				error.print("SYNTAX ERROR: function " + fnNameM.group(1) + " not defined", curLine);
+				if (printErrors) error.print("SYNTAX ERROR: function " + fnNameM.group(1) + " not defined", curLine);
 				return "";
 			}
 		} else {
-			error.print("SYNTAX ERROR: invalid function call statement", curLine);
+			if (printErrors) error.print("SYNTAX ERROR: invalid function call statement", curLine);
 			return "";
 		}
 
 		if (matcher1.find()) {
 			argNum++;
-			tmp = ParseArg(matcher1.group(1), blockVars, curLine, functions.get(index), 0, error);
+			tmp = ParseArg(matcher1.group(1), blockVars, curLine, functions.get(index), 0, error, printErrors);
 			if (tmp.equals("")) {
 				return "";
 			}
@@ -568,7 +586,7 @@ public class Interpreter {
 
 		while (matcher2.find()) {
 			argNum++;
-			tmp = ParseArg(matcher2.group(1), blockVars, curLine, functions.get(index), argNum, error);
+			tmp = ParseArg(matcher2.group(1), blockVars, curLine, functions.get(index), argNum, error, printErrors);
 			if (tmp.equals("")) {
 				return "";
 			}
@@ -577,7 +595,7 @@ public class Interpreter {
 
 		if (matcher3.find()) {
 			argNum++;
-			tmp = ParseArg(matcher3.group(1), blockVars, curLine, functions.get(index), argNum, error);
+			tmp = ParseArg(matcher3.group(1), blockVars, curLine, functions.get(index), argNum, error, printErrors);
 			if (tmp.equals("")) {
 				return "";
 			}
@@ -585,26 +603,33 @@ public class Interpreter {
 		}
 
 		if (argNum != functions.get(index).parameters.size() - 1) {
-			error.print("SYNTAX ERROR: in call to function " + fnNameM.group(1) + ": expected " + functions.get(index).parameters.size()
+			if (printErrors) error.print("SYNTAX ERROR: in call to function "
+				+ fnNameM.group(1) + ": expected " + functions.get(index).parameters.size()
 				+ " arguments but found " + (argNum+1), curLine);
 			return "";
 		}
 
-		sb.append(");");
+		if (printErrors) {
+			sb.append(");");
+		} else {
+			sb.append(")");
+		}
 		return sb.toString();
 	}
 
-	public static String ParseArg(String input, Map<String, String> blockVars, int curLine, Function fn, int argNum, Error error) {
+	public static String ParseArg(String input, Map<String, String> blockVars, int curLine,
+		Function fn, int argNum, Error error, boolean printErrors) {
+		
 		String[] tmp = ParseExpression(input, blockVars);
 
 		if (argNum >= fn.parameters.size()) {
-			error.print("SYNTAX ERROR: too many arguments to function " 
+			if (printErrors) error.print("SYNTAX ERROR: too many arguments to function " 
 				+ fn.name + ", expected " + fn.parameters.size(), curLine);
 			return "";
 		}
 
 		if (tmp[0].equals("")) {
-			error.print("SYNTAX ERROR: unable to parse function argument " + input, curLine);
+			if (printErrors) error.print("SYNTAX ERROR: unable to parse function argument " + input, curLine);
 			return "";
 		} else if (fn.parameters.get(argNum).type.equals(tmp[0].toLowerCase())
 			|| (fn.parameters.get(argNum).type.equals("double") && tmp[0].equals("int"))
@@ -612,7 +637,7 @@ public class Interpreter {
 
 			return tmp[1];
 		} else {
-			error.print("SYNTAX ERROR: in call to function " + fn.name + ", argument number " 
+			if (printErrors) error.print("SYNTAX ERROR: in call to function " + fn.name + ", argument number " 
 				+ argNum + ": type mismatch, expected " + fn.parameters.get(argNum).type
 				+ " but found " + tmp[0], curLine);
 			return "";
@@ -623,6 +648,10 @@ public class Interpreter {
 		StringBuilder sb = new StringBuilder();
 		String tokenRegex = "\\(|\\)|\\band\\b|\\bor\\b|\\bnot\\b";
 		String[] tokens = input.split("((?<=" + tokenRegex + ")|(?=" + tokenRegex + "))");
+		if (tokens.length <= 1) {
+			// not a boolean expr
+			return "";
+		}
 		int parens = 0;
 		String tok;
 		Stack<Character> validate = new Stack<>();
@@ -670,15 +699,9 @@ public class Interpreter {
 				validate.push('u');
 				sb.append("!");
 			} else {
-				String[] var = CheckVariable(tokens[i], blockVars);
-				String[] val = ParseValue(tokens[i]);
-				String eq = ParseEqualityExpr(tokens[i], blockVars);
-				if (var[0].equals("boolean")) {
-					sb.append(var[1]);
-				} else if (val[0].equals("boolean")) {
-					sb.append(val[1]);
-				} else if (!eq.equals("")) {
-					sb.append(eq);
+				String[] expr = ParseExpression(tok, blockVars);
+				if (expr[0].equals("boolean")) {
+					sb.append(expr[1]);
 				} else {
 					// not a boolean
 					return "";
@@ -736,6 +759,11 @@ public class Interpreter {
 		int parens = 0;
 		String tok;
 		String[] ret = new String[]{"int", ""};
+		if (tokens.length <= 1) {
+			// not a math expr
+			ret[0] = "";
+			return ret;
+		}
 		Stack<Character> validate = new Stack<>();
 
 		Pattern ops = Pattern.compile("^[+\\-*/%]$");
@@ -776,23 +804,14 @@ public class Interpreter {
 					return ret;
 				}
 
-				String[] var = CheckVariable(tok, blockVars);
-				String[] val = ParseValue(tok);
+				String[] expr = ParseExpression(tok, blockVars);
 				boolean fail = true;
 
-				switch(var[0]) {
+				switch(expr[0]) {
 					case "double":
 						ret[0] = "double";
 					case "int":
-						sb.append(var[1]);
-						fail = false;
-				}
-
-				switch(val[0]) {
-					case "double":
-						ret[0] = "double";
-					case "int":
-						sb.append(val[1]);
+						sb.append(expr[1]);
 						fail = false;
 				}
 
@@ -862,6 +881,7 @@ public class Interpreter {
 		String[] math = ParseMathExpr(input, blockVars);
 		String eval = ParseEvalExpr(input, blockVars);
 		String[] val = ParseValue(input);
+		String fnCall = ParseFunctionCall(input, blockVars, 0, (m,l)->{}, false);
 		
 		if (!var[0].equals("")) {
 			ret = var;
@@ -872,6 +892,14 @@ public class Interpreter {
 			ret[1] = eval;
 		} else if (!val[0].equals("")) {
 			ret = val;
+		} else if (!fnCall.equals("")) {
+			for (Function f : functions) {
+				if (f.name.equals(fnCall.split("\\(")[0])) {
+					ret[0] = f.returnType;
+					break;
+				}
+			}
+			ret[1] = fnCall;
 		}
 
 		return ret;
