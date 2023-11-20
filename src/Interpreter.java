@@ -866,7 +866,7 @@ public class Interpreter {
 		return ret;
 	}
 
-		public static String ParseStringConcatExpr(String input, Map<String, String> blockVars) {
+	public static String ParseStringConcatExpr(String input, Map<String, String> blockVars) {
 		StringBuilder sb = new StringBuilder();
 		String[] tokens = input.split("\\+");
 		boolean valid = false;
@@ -950,6 +950,7 @@ public class Interpreter {
 		String[] var = CheckVariable(input, blockVars);
 		String[] math = ParseMathExpr(input, blockVars);
 		String eval = ParseEvalExpr(input, blockVars);
+		String stringCat = ParseStringConcatExpr(input, blockVars);
 		String[] val = ParseValue(input);
 		String fnCall = ParseFunctionCall(input, blockVars, 0, (m,l)->{}, false);
 		
@@ -960,6 +961,9 @@ public class Interpreter {
 		} else if (!eval.equals("")) {
 			ret[0] = "boolean";
 			ret[1] = eval;
+		}  else if (!stringCat.equals("")) {
+			ret[0] = "String";
+			ret[1] = stringCat;
 		} else if (!val[0].equals("")) {
 			ret = val;
 		} else if (!fnCall.equals("")) {
@@ -999,7 +1003,7 @@ public class Interpreter {
 			ret[0] = "int";
 		} else if (Pattern.compile("^[0-9]+\\.[0-9]+$").matcher(input).matches()) {
 			ret[0] = "double";
-		} else if (Pattern.compile("^\".*\"$").matcher(input).matches()) {
+		} else if (Pattern.compile("^\"[^\"]*\"$").matcher(input).matches()) {
 			ret[0] = "String";
 		} else if (input.equals("true") || input.equals("false")) {
 			ret[0] = "boolean";
