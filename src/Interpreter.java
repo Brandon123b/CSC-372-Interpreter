@@ -950,6 +950,7 @@ public class Interpreter {
 		String[] var = CheckVariable(input, blockVars);
 		String[] math = ParseMathExpr(input, blockVars);
 		String eval = ParseEvalExpr(input, blockVars);
+		String equal = ParseEqualityExpr(input, blockVars);
 		String stringCat = ParseStringConcatExpr(input, blockVars);
 		String[] val = ParseValue(input);
 		String fnCall = ParseFunctionCall(input, blockVars, 0, (m,l)->{}, false);
@@ -961,7 +962,10 @@ public class Interpreter {
 		} else if (!eval.equals("")) {
 			ret[0] = "boolean";
 			ret[1] = eval;
-		}  else if (!stringCat.equals("")) {
+		} else if (!equal.equals("")) {
+			ret[0] = "boolean";
+			ret[1] = equal;
+		} else if (!stringCat.equals("")) {
 			ret[0] = "String";
 			ret[1] = stringCat;
 		} else if (!val[0].equals("")) {
