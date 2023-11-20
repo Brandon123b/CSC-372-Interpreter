@@ -23,4 +23,8 @@ $(BIN_DIR)/%.class: $(SRC_DIR)/%.java
 clean:
 	rm -rf $(BIN_DIR)/*
 
+# Cleans interpreted java files (Be careful!)
+cleanJava:
+	rm -f *.java
+
 .PHONY: all clean

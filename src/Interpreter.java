@@ -3,7 +3,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Stack;
 import java.lang.Math;
-import java.util.Arrays;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -428,7 +427,7 @@ public class Interpreter {
 		patterns.put("loopEnd",      Pattern.compile("^Exit the while$"));
 		patterns.put("condStart",    Pattern.compile("^If (.+), then$"));
 		patterns.put("condEnd",      Pattern.compile("^Leave the if statement$"));
-		patterns.put("varSet",       Pattern.compile("^Set ([A-Za-z0-9]+) to (.+)"));
+		patterns.put("varSet",       Pattern.compile("^Set ([A-Za-z0-9]+) to (\\S+)$"));
 		patterns.put("globalVarSet", Pattern.compile("^Set global ([A-Za-z0-9]+) to (.+)"));
 		patterns.put("functionCall", Pattern.compile("^Call the function (.+)"));
 		patterns.put("consoleWrite", Pattern.compile("^Print (.+) to the console$"));
@@ -1091,6 +1090,23 @@ public class Interpreter {
 		output = StmtSetSize(input, blockVars, indent, start);
 		if (!output.equals(""))
 			return output;
+		
+		//
+		// Lists
+		//
+
+		output = StmtListAdd(input, blockVars, indent, start);
+		if (!output.equals(""))
+			return output;
+		output = StmtListRemoveIndex(input, blockVars, indent, start);
+		if (!output.equals(""))
+			return output;
+		output = StmtListRemove(input, blockVars, indent, start);
+		if (!output.equals(""))
+			return output;
+		output = StmtListGetElement(input, blockVars, indent, start);
+		if (!output.equals(""))
+			return output;
 
 		return "";
 	}
@@ -1741,28 +1757,211 @@ public class Interpreter {
 		return indent + name + ".setSize(" + sizeParsed[1] + ");\n";
 	}
 
-	public static void Test(){
+	/* ---------------------------------- Lists --------------------------------- */
 
-		String output;
+	static Pattern patternStmtListAdd = Pattern.compile("^Add (.+) to (.+)$");
+	static Pattern patternStmtListRemove = Pattern.compile("^Remove (.+) from (.+)$");
+	static Pattern patternStmtListRemoveIndex = Pattern.compile("^Remove index (.+) from (.+)$");
+	static Pattern patternStmtListGetElement = Pattern.compile("^Set (.+) to index (.+) of (.+)$");
 
-		// Test ParseExpression (corectly fails)
-		output = ParseExpression("wasdwasd", globalVars)[0];
-		System.out.println("Expr: " + output);	// output: ""
+	// Parses a "List Add" statement
+	public static String StmtListAdd(String input, Map<String, String> blockVars, String indent, int start) {
+		
+		Matcher matcher = patternStmtListAdd.matcher(input.trim());
 
-		// Test ParseExpression (Correct)
-		output = ParseExpression("\"wasdwasd\"", globalVars)[0];
-		System.out.println("Expr: " + output);	// output: "String"
+		// This is not a "Add" statement
+		if (!matcher.find())
+			return "";
+		
+		String elementName = matcher.group(1);
+		String listName = matcher.group(2);
 
-		// Test ParseExpression
-		output = ParseExpression("45wasdwasd", globalVars)[0];
-		System.out.println("Expr: " + output);	// output: "int"
+		String[] checkElementName = ParseExpression(elementName, blockVars);
+		String[] checklistName = CheckVariable(listName, blockVars);
 
-		// Test adding doubles
-		output = ParseExpression("1.0 + 1.0", globalVars)[0];
-		System.out.println("Expr: " + output);	// output: ""
+		// Verify the element is valid
+		if (checkElementName[0].equals("")) {
+			System.out.println("Error in parsing List Add statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid element in expression", start));
+			return " ";
+		}
+
+		String createList = "";
+
+		// Create a list if it does not already exist
+		if (checklistName[0].equals("")) {
+			blockVars.put(listName, "List<" + checkElementName[0] + ">");
+			String listType = GetListType(checkElementName[0]);
+			if (listType.equals("")){
+				System.out.println("Error in parsing List Add statement:");
+				System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for list \"%s\"", start, checkElementName[0]));
+				System.out.println(String.format("  Expected a valid type\n"));
+				return " ";
+			}
+			createList = indent + "ArrayList<" + listType + "> " + listName + " = new ArrayList<>();\n";
+		}
+		// Verify that the type is valid
+		else {
+			if (!checklistName[0].equals("List<" + checkElementName[0] + ">")){
+				System.out.println("Error in parsing List Add statement:");
+				System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for list \"%s\"", start, checklistName[0]));
+				System.out.println(String.format("  Expected a list of type " + checkElementName[0] + "\n"));
+				return " ";
+			}
+		}
+
+		// Add the object to the list
+		return createList + indent + listName + ".add(" + elementName + ");\n";
 	}
 
-	/* ----------------------------- GUI Validation ----------------------------- */
+	// Parses a "List Remove" statement
+	public static String StmtListRemove(String input, Map<String, String> blockVars, String indent, int start) {
+		
+		Matcher matcher = patternStmtListRemove.matcher(input.trim());
+
+		// This is not a "Remove" statement
+		if (!matcher.find())
+			return "";
+		
+		String elementName = matcher.group(1);
+		String listName = matcher.group(2);
+
+		String[] checkElementName = ParseExpression(elementName, blockVars);
+		String[] checklistName = CheckVariable(listName, blockVars);
+
+		// Verify the element is valid
+		if (checkElementName[0].equals("")) {
+			System.out.println("Error in parsing List Remove statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid element in expression", start));
+			return " ";
+		}
+
+		// Verify that the list exists
+		if (checklistName[0].equals("")) {
+			System.out.println("Error in parsing List Remove statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) List \"%s\" does not exist", start, listName));
+			return " ";
+		}
+
+		// Verify that the type is valid
+		if (!checklistName[0].equals("List<" + checkElementName[0] + ">")){
+			System.out.println("Error in parsing List Remove statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for list \"%s\"", start, checklistName[0]));
+			System.out.println(String.format("  Expected a list of type " + checkElementName[0] + "\n"));
+			return " ";
+		}
+
+		// Remove the object from the list (ints are weird, it is index when int, object when not)
+		if (checkElementName[0].equals("int"))
+			return indent + listName + ".remove(Integer.valueOf(" + elementName + "));\n";
+		else
+			return indent + listName + ".remove(" + elementName + ");\n";
+	}
+
+	// Parses a "List Remove Index" statement
+	public static String StmtListRemoveIndex(String input, Map<String, String> blockVars, String indent, int start) {
+		
+		Matcher matcher = patternStmtListRemoveIndex.matcher(input.trim());
+
+		// This is not a "Remove Index" statement
+		if (!matcher.find())
+			return "";
+		
+		String index = matcher.group(1);
+		String listName = matcher.group(2);
+
+		String[] checkIndex = ParseExpression(index, blockVars);
+		String[] checklistName = CheckVariable(listName, blockVars);
+
+		// Verify the index is valid
+		if (checkIndex[0].equals("")) {
+			System.out.println("Error in parsing List Remove Index statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid index in expression", start));
+			return " ";
+		}
+
+		// Verify the index is an int
+		if (!checkIndex[0].equals("int")) {
+			System.out.println("Error in parsing List Remove Index statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for index \"%s\"", start, checkIndex[0]));
+			System.out.println(String.format("  Expected an int\n"));
+			return " ";
+		}
+
+		// Verify that the list exists
+		if (checklistName[0].equals("")) {
+			System.out.println("Error in parsing List Remove Index statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) List \"%s\" does not exist", start, listName));
+			return " ";
+		}
+
+		// Remove the object from the list
+		return indent + listName + ".remove(" + index + ");\n";
+	}
+
+	// Parses a "List Get Element" statement
+	public static String StmtListGetElement(String input, Map<String, String> blockVars, String indent, int start) {
+		
+		Matcher matcher = patternStmtListGetElement.matcher(input.trim());
+
+		System.out.println(input.trim());
+
+		// This is not a "Get Element" statement
+		if (!matcher.find())
+			return "";
+		
+		String varName = matcher.group(1);
+		String index = matcher.group(2);
+		String listName = matcher.group(3);
+
+		String[] checkVarName = ParseExpression(varName, blockVars);
+		String[] checkIndex = ParseExpression(index, blockVars);
+		String[] checklistName = CheckVariable(listName, blockVars);
+
+		// Verify the index is valid
+		if (checkIndex[0].equals("")) {
+			System.out.println("Error in parsing List Get Element statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid index in expression", start));
+			return " ";
+		}
+
+		// Verify the index is an int
+		if (!checkIndex[0].equals("int")) {
+			System.out.println("Error in parsing List Get Element statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for index \"%s\"", start, checkIndex[0]));
+			System.out.println(String.format("  Expected an int\n"));
+			return " ";
+		}
+
+		// Verify that the list exists
+		if (checklistName[0].equals("")) {
+			System.out.println("Error in parsing List Get Element statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) List \"%s\" does not exist", start, listName));
+			return " ";
+		}
+
+		// Get the list type
+		String listType = checklistName[0].substring(5, checklistName[0].length() - 1);
+
+		// If the variable does not exist, create it
+		if (checkVarName[0].equals("")) {
+			blockVars.put(varName, listType);
+			return indent + listType + " " + varName + " = " + listName + ".get(" + index + ");\n";
+		}
+
+		// Verify that the variable is the same type as the list
+		if (!checkVarName[0].equals(listType)) {
+			System.out.println("Error in parsing List Get Element statement:");
+			System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for variable \"%s\"", start, checkVarName[0]));
+			System.out.println(String.format("  Expected a variable of type " + listType + "\n"));
+			return " ";
+		}
+
+		// Get the object from the list
+		return indent + varName + " = " + listName + ".get(" + index + ");\n";
+	}
+
+	/* ------------------------------- Validation ------------------------------- */
 
 	// Validates a GUI type
 	public static String ParseGuiType(String type, int start){
@@ -1781,6 +1980,24 @@ public class Interpreter {
 				return "";
 		}
 
+	}
+
+	// Converts things like "int" to "Integer" to work with java list types
+	public static String GetListType(String type){
+		switch (type) {
+			case "int":
+				return "Integer";
+			case "double":
+				return "Double";
+			case "String":
+				return "String";
+			case "boolean":
+			case "bool":
+				return "Boolean";
+		
+			default:
+				return ParseGuiType(type, 0);
+		}
 	}
 
 	/* -------------------------------------------------------------------------- */
