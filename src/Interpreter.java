@@ -171,6 +171,8 @@ public class Interpreter {
 		return sb.toString();
 	}
 
+	// Generates variable declaration statements for all the
+	// detected global variables
 	public static String GlobalVariables() {
 		StringBuilder sb = new StringBuilder();
 		for (Map.Entry entry : globalVars.entrySet()) {
@@ -327,6 +329,7 @@ public class Interpreter {
 		return args;
 	}
 
+	// Parses the return type of a function declaration
 	public static String ParseReturnType(String input, int lineNumber) {
 		if (input == null) {
 			return "void";
@@ -345,7 +348,8 @@ public class Interpreter {
 		}
 	}
 
-	// Parse a block by matching expressions until either the block is empty or no match is found
+	// Cleans up the input string, then passes it to the helper function to handle
+	// the parsing
 	public static String ParseBlock(String input, String indent, String file, Function fn) {
 		List<String> stmts = new ArrayList<>();
 		StringBuilder stmt = new StringBuilder();
@@ -394,6 +398,8 @@ public class Interpreter {
 		return ParseBlock(stmts, indent, file, new HashMap<>(), fn);
 	}
 
+	// Parses a block of statements by repeatedly matching statements
+	// until no statements remain
 	public static String ParseBlock(List<String> input, String indent, 
 		String file, Map<String, String> blockVars, Function fn) {
 
@@ -505,6 +511,9 @@ public class Interpreter {
 		return sb.toString();
 	}
 
+	// Parses a variable assignment/update expression. If the variable hasn't yet been
+	// defined, inserts it into the proper map (global or local) and uses context to
+	// determine its type. If it has been defined, ensures the type matches
 	public static String ParseVarSet(String name, String val, boolean global, 
 		Map<String, String> blockVars, String file, Function fn, int curLine, Error error) {
 
@@ -538,6 +547,8 @@ public class Interpreter {
 		}
 	}
 
+	// Parses a function call by ensuring the given function exists, then
+	// handles each argument and makes sure all of them are correct
 	public static String ParseFunctionCall(String input, Map<String, String> blockVars,
 		int curLine, Error error, boolean printErrors) {
 		
@@ -617,6 +628,8 @@ public class Interpreter {
 		return sb.toString();
 	}
 
+	// Parses an argument to a function call. If it is valid and the type is correct,
+	// returns it, otherwise prints an error message
 	public static String ParseArg(String input, Map<String, String> blockVars, int curLine,
 		Function fn, int argNum, Error error, boolean printErrors) {
 		
@@ -644,6 +657,7 @@ public class Interpreter {
 		}
 	}
 
+	// Parses a boolean expression
 	public static String ParseEvalExpr(String input, Map<String, String> blockVars) {
 		StringBuilder sb = new StringBuilder();
 		String tokenRegex = "\\(|\\)|\\band\\b|\\bor\\b|\\bnot\\b";
@@ -719,6 +733,8 @@ public class Interpreter {
 		}
 	}
 
+	// Parses an equality statement by validating both sides of the equality
+	// operator and ensuring the types match
 	public static String ParseEqualityExpr(String input, Map<String, String> blockVars) {
 		String[] operands = new String[]{};
 		String op = "";
@@ -746,12 +762,17 @@ public class Interpreter {
 		if (left[0].equals("") || right[0].equals("")) {
 			// error parsing one side
 			return "";
+		} else if (!left[0].equals(right[0])) {
+			// type mismatch
+			return "";
 		}
 
 		// if we get here we're good
 		return left[1] + op + right[1];
 	}
 
+	// Parses the given string as a mathematic expression and determines whether
+	// it should be treated as an int or a double
 	public static String[] ParseMathExpr(String input, Map<String, String> blockVars) {
 		StringBuilder sb = new StringBuilder();
 		String tokenRegex = "\\(|\\)|\\+|-|\\*|/|%";
@@ -835,6 +856,9 @@ public class Interpreter {
 		return ret;
 	}
 
+	// Parses the given return statement by validating the expression, then
+	// checking the type. If the function's return type has already been defined,
+	// ensures the types match, otherwise updates the function's return type.
 	public static String ParseReturnStmt(String input, Map<String, String> blockVars,
 		String file, Function fn, int curLine, Error error) {
 
@@ -859,6 +883,8 @@ public class Interpreter {
 		}
 	}
 
+	// Parses a console write statement by validating the input and returns a
+	// Java print statement
 	public static String ParseConsoleWrite(String input, Map<String, String> blockVars, 
 		String file, Function fn, int curLine, Error error) {
 		
@@ -873,6 +899,8 @@ public class Interpreter {
 		}
 	}
 
+	// Parses the input expression by checking if it is a variable, a math expression
+	// a boolean expression, a value, or a function call
 	public static String[] ParseExpression(String input, Map<String, String> blockVars) {
 		input = input.trim();
 		String[] ret = new String[]{"", ""};
@@ -905,6 +933,8 @@ public class Interpreter {
 		return ret;
 	}
 
+	// Checks if the given input string exists as a global variable or as a local variable
+	// in the passed blockVars map. If it does, returns an array of Strings as [type, name]
 	public static String[] CheckVariable(String input, Map<String, String> blockVars) {
 		input = input.trim();
 		String[] ret = new String[]{"", ""};
@@ -919,6 +949,7 @@ public class Interpreter {
 		return ret;
 	}
 
+	// Parses the input string as a value. Supported types are int, double, boolean, and String
 	public static String[] ParseValue(String input) {
 		input = input.trim();
 		String[] ret = new String[]{"", input};
