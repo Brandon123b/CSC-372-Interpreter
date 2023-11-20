@@ -436,6 +436,8 @@ public class Interpreter {
 
 		int curLine = fn.lineNumber;
 
+		boolean returnStatement = false;
+
 		for (int i = 0; i < input.size(); i++) {
 			curLine += input.get(i).chars().filter(c -> c == '\n').count();
 			String line = input.get(i).trim();
@@ -485,6 +487,7 @@ public class Interpreter {
 				sb.append(indent + ParseConsoleWrite(matchers.get("consoleWrite").group(1),
 					localVars, file, fn, curLine, error) + "\n");
 			} else if (matchers.get("returnStmt").find()) {
+				returnStatement = true;
 				sb.append(indent + ParseReturnStmt(matchers.get("returnStmt").group(1),
 					localVars, file, fn, curLine, error) + "\n");
 			} else {
@@ -505,6 +508,13 @@ public class Interpreter {
 		// make sure all if and while statements were closed
 		if (!nesting.empty()) {
 			error.print("SYNTAX ERROR: " + nesting.pop() + " statement was entered, but never exited", curLine);
+			return "";
+		}
+
+		// if return type is defined, make sure there is a return statement
+		if (!returnStatement && !fn.returnType.equals("void")) {
+			error.print("SYNTAX ERROR: " + fn.name + " has a return type of " + fn.returnType
+				+ ", but no return statement was found", curLine);
 			return "";
 		}
 
@@ -854,6 +864,38 @@ public class Interpreter {
 		}
 
 		return ret;
+	}
+
+		public static String ParseStringConcatExpr(String input, Map<String, String> blockVars) {
+		StringBuilder sb = new StringBuilder();
+		String[] tokens = input.split("\\+");
+		boolean valid = false;
+		if (tokens.length <= 1) {
+			// not a string concat expr
+			return "";
+		}
+
+		for (int i = 0; i < tokens.length; i++) {
+			if (tokens[i].trim().equals("")) {
+				// error
+				return "";
+			}
+
+			String[] expr = ParseExpression(tokens[i].trim(), blockVars);
+
+			if (expr[0].equals("String")) {
+				valid = true;
+			}
+
+			if (!expr[0].equals("")) {
+				sb.append("+" + expr[1]);
+			} else {
+				// error
+				return "";
+			}
+		}
+
+		return sb.toString().substring(1);
 	}
 
 	// Parses the given return statement by validating the expression, then
