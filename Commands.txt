@@ -38,6 +38,17 @@ Function:
 	Ex: "Begin a function called Fib with type int called N.
 	Ex: "Begin a function called Foo with type int called Pie, type bool called Hello, and type string called Str.
 
+Lists:
+	(Lists also use implied types, no need to declare them, just add a value to a list and it will be created)
+	Add <expr> to <Var>.
+	Remove <expr> from <Var>.
+	Remove index <int> from <Var>.
+	Set <Var> to index <int> of <List>.
+	Ex: "Add 5 to MyList."
+	Ex: "Remove 5 from MyList."
+	Ex: "Remove index 2 from MyList."
+	Ex: "Set myVar to index 2 of MyList."
+
 GUI:
 	Create a [global] <GUI Object> called <Var>.	# Same for Circle, line, and text
 	Move <Var> to <expr> and <expr>.				# x and y pos

@@ -178,6 +178,11 @@ class Box extends DrawableObject {
 	}
 
 	@Override
+	public String toString() {
+		return String.format("Box(x: %d, y: %d, width: %d, height: %d, color: %s)", (int)x, (int)y, (int)width, (int)height, color.toString());
+	}
+
+	@Override
 	public void draw(Graphics g) {
 		g.setColor(color);
 		g.fillRect((int)x, (int)y, (int)width, (int)height);
@@ -204,6 +209,11 @@ class Circle extends DrawableObject {
 
 	public void setRadius(int radius) {
 		this.radius = radius;
+	}
+
+	@Override
+	public String toString() {
+		return String.format("Circle(x: %d, y: %d, radius: %d, color: %s)", (int)x, (int)y, (int)radius, color.toString());
 	}
 
 	@Override
@@ -253,6 +263,11 @@ class Line extends DrawableObject {
     }
 
 	@Override
+	public String toString() {
+		return String.format("Line(x1: %d, y1: %d, x2: %d, y2: %d, color: %s)", start.x, start.y, end.x, end.y, color.toString());
+	}
+
+	@Override
 	public void draw(Graphics g) {
 		g.setColor(color);
 		((Graphics2D) g).setStroke(new BasicStroke((int) size));
@@ -292,6 +307,11 @@ class Text extends DrawableObject {
 	// Sets the size of the font
 	public void setSize(int size) {
 		font = new Font(font.getName(), font.getStyle(), size);
+	}
+
+	@Override
+	public String toString() {
+		return String.format("Text(x: %d, y: %d, text: %s, color: %s)", (int)x, (int)y, text, color.toString());
 	}
 
 	@Override
