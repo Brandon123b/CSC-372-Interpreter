@@ -1,7 +1,7 @@
 Begin a function called Fun. 
 	Set t1 to 1.
 	
-	If True, then:
+	If true, then:
 		Set t1 to 2.
 	Leave the if statement.
 

@@ -174,8 +174,11 @@ public class Interpreter {
 	// detected global variables
 	public static String GlobalVariables() {
 		StringBuilder sb = new StringBuilder();
-		for (Map.Entry entry : globalVars.entrySet()) {
-			sb.append("\t").append(entry.getValue()).append(" ").append(entry.getKey()).append(";\n");
+		for (Map.Entry<String, String> entry : globalVars.entrySet()) {
+			if (entry.getValue().contains("List"))
+				sb.append("\t").append(entry.getValue()).append(" ").append(entry.getKey()).append(" = new ArrayList<>();\n");
+			else
+				sb.append("\t").append(entry.getValue()).append(" ").append(entry.getKey()).append(";\n");
 		}
 		return sb.toString();
 	}
@@ -1829,7 +1832,7 @@ public class Interpreter {
 
 	/* ---------------------------------- Lists --------------------------------- */
 
-	static Pattern patternStmtListAdd = Pattern.compile("^Add (.+) to (.+)$");
+	static Pattern patternStmtListAdd = Pattern.compile("^Add (.+) to (global )?(.+)$");
 	static Pattern patternStmtListRemove = Pattern.compile("^Remove (.+) from (.+)$");
 	static Pattern patternStmtListRemoveIndex = Pattern.compile("^Remove index (.+) from (.+)$");
 	static Pattern patternStmtListGetElement = Pattern.compile("^Set (.+) to index (.+) of (.+)$");
@@ -1844,7 +1847,9 @@ public class Interpreter {
 			return "";
 		
 		String elementName = matcher.group(1);
-		String listName = matcher.group(2);
+		String listName = matcher.group(3);
+
+		boolean isGlobal = matcher.group(2) != null;
 
 		String[] checkElementName = ParseExpression(elementName, blockVars);
 		String[] checklistName = CheckVariable(listName, blockVars);
@@ -1860,15 +1865,22 @@ public class Interpreter {
 
 		// Create a list if it does not already exist
 		if (checklistName[0].equals("")) {
-			blockVars.put(listName, "List<" + checkElementName[0] + ">");
-			String listType = GetListType(checkElementName[0]);
-			if (listType.equals("")){
-				System.out.println("Error in parsing List Add statement:");
-				System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for list \"%s\"", start, checkElementName[0]));
-				System.out.println(String.format("  Expected a valid type\n"));
-				return " ";
+
+			if (isGlobal){
+				globalVars.put(listName, "List<" + checkElementName[0] + ">");
 			}
-			createList = indent + "ArrayList<" + listType + "> " + listName + " = new ArrayList<>();\n";
+			else {
+
+				blockVars.put(listName, "List<" + checkElementName[0] + ">");
+				String listType = GetListType(checkElementName[0]);
+				if (listType.equals("")){
+					System.out.println("Error in parsing List Add statement:");
+					System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for list \"%s\"", start, checkElementName[0]));
+					System.out.println(String.format("  Expected a valid type\n"));
+					return " ";
+				}
+				createList = indent + "ArrayList<" + listType + "> " + listName + " = new ArrayList<>();\n";
+			}
 		}
 		// Verify that the type is valid
 		else {

@@ -7,11 +7,18 @@ Begin a function called Init.
 	Set the size of backGround to 1920 and 1080.
 	Set the color of backGround to (135, 206, 250, 255).
 
+	# Create a sun
+	Call the function CreateSun.
+Leave the function.
+
+Begin a function called CreateSun.
+	
 	# Sun vars
 	Set global sunRadius to 115.
-	Set global sunLinesCount to 12.
+	Set global sunLinesCount to 24.
 	Set global sunLinesGap to sunRadius + 25.
-	Set global sunLinesLength to 150.
+	Set global sunLineSize to 5.
+	Set global sunLinesLength to 75.
 	Set global sunPosx to 1600.
 	Set global sunPosy to 200.
 
@@ -25,60 +32,30 @@ Begin a function called Init.
 	When sun is clicked call ClickSun.
 
 	# Create some sun lines
-	Create a global Line called sunLines1.
-	Create a global Line called sunLines2.
-	Create a global Line called sunLines3.
-	Create a global Line called sunLines4.
-	Create a global Line called sunLines5.
-	Create a global Line called sunLines6.
-	Create a global Line called sunLines7.
-	Create a global Line called sunLines8.
-	Create a global Line called sunLines9.
-	Create a global Line called sunLines10.
-	Create a global Line called sunLines11.
-	Create a global Line called sunLines12.
+	Set index to sunLinesCount.
+	While index > 0:
+		Create a Line called sunLine.
+		Set the size of sunLine to sunLineSize.
+		Set the color of sunLine to (255, 255, 102, 255).
+		Add sunLine to global sunLinesList.
 
-	Set lineSize to 5.
-	Set the size of sunLines1 to lineSize.
-	Set the size of sunLines2 to lineSize.
-	Set the size of sunLines3 to lineSize.
-	Set the size of sunLines4 to lineSize.
-	Set the size of sunLines5 to lineSize.
-	Set the size of sunLines6 to lineSize.
-	Set the size of sunLines7 to lineSize.
-	Set the size of sunLines8 to lineSize.
-	Set the size of sunLines9 to lineSize.
-	Set the size of sunLines10 to lineSize.
-	Set the size of sunLines11 to lineSize.
-	Set the size of sunLines12 to lineSize.
+		Set index to index - 1.
+	Exit the while.
+	
+	# Used when spacing the sun lines
+	Set global cos15 to 0.96592582628.
+	Set global sin15 to 0.2588190451.
 
-	# Set the color of the sun lines
-	Set the color of sunLines1 to (255, 255, 102, 255).
-	Set the color of sunLines2 to (255, 255, 102, 255).
-	Set the color of sunLines3 to (255, 255, 102, 255).
-	Set the color of sunLines4 to (255, 255, 102, 255).
-	Set the color of sunLines5 to (255, 255, 102, 255).
-	Set the color of sunLines6 to (255, 255, 102, 255).
-	Set the color of sunLines7 to (255, 255, 102, 255).
-	Set the color of sunLines8 to (255, 255, 102, 255).
-	Set the color of sunLines9 to (255, 255, 102, 255).
-	Set the color of sunLines10 to (255, 255, 102, 255).
-	Set the color of sunLines11 to (255, 255, 102, 255).
-	Set the color of sunLines12 to (255, 255, 102, 255).
-
-	Set global cos30 to 0.866.
-	Set global sin30 to 0.5.
-
+	# Used for animation
 	Set global cos1 to 0.99984769515639123915701155881391.
 	Set global sin1 to 0.01745240643728351281941897851632.
 	
 	# For animation
 	Set global sunLineX to 0.0.
 	Set global sunLineY to 1.0.
-
 Leave the function.
 
-Begin a function called Gameloop. 
+Begin a function called AnimateSun.
 
 	# Animate the sun lines
 	Set global sunLineX to sunLineX * cos1 - sunLineY * sin1.
@@ -88,91 +65,30 @@ Begin a function called Gameloop.
 	Set x to sunLineX.
 	Set y to sunLineY.
 
-	# Rotates the sun lines by 30 degrees each time
-	Set tempx to x.
-	Set x to x * cos30 - y * sin30.
-	Set y to tempx * sin30 + y * cos30.
-	Set startX to sunPosx + x * sunLinesGap.
-	Set startY to sunPosy + y * sunLinesGap.
-	Set the chords of sunLines1 to (startX, startY) and (startX + x * sunLinesLength, startY + y * sunLinesLength).
+	# Set the position of the sun lines
+	Set index to 0.
+	While index < sunLinesCount:
+		Set sunLine to index index of sunLinesList.
+		Set newLineLength to sunLinesLength.
 
-	Set tempx to x.
-	Set x to x * cos30 - y * sin30.
-	Set y to tempx * sin30 + y * cos30.
-	Set startX to sunPosx + x * sunLinesGap.
-	Set startY to sunPosy + y * sunLinesGap.
-	Set the chords of sunLines2 to (startX, startY) and (startX + x * sunLinesLength / 2, startY + y * sunLinesLength / 2).
-	
-	Set tempx to x.
-	Set x to x * cos30 - y * sin30.
-	Set y to tempx * sin30 + y * cos30.
-	Set startX to sunPosx + x * sunLinesGap.
-	Set startY to sunPosy + y * sunLinesGap.
-	Set the chords of sunLines3 to (startX, startY) and (startX + x * sunLinesLength, startY + y * sunLinesLength).
+		If index % 2 = 0, then:
+			Set newLineLength to newLineLength * 2.
+		Leave the if statement.
 
-	Set tempx to x.
-	Set x to x * cos30 - y * sin30.
-	Set y to tempx * sin30 + y * cos30.
-	Set startX to sunPosx + x * sunLinesGap.
-	Set startY to sunPosy + y * sunLinesGap.
-	Set the chords of sunLines4 to (startX, startY) and (startX + x * sunLinesLength / 2, startY + y * sunLinesLength / 2).
-	
-	Set tempx to x.
-	Set x to x * cos30 - y * sin30.
-	Set y to tempx * sin30 + y * cos30.
-	Set startX to sunPosx + x * sunLinesGap.
-	Set startY to sunPosy + y * sunLinesGap.
-	Set the chords of sunLines5 to (startX, startY) and (startX + x * sunLinesLength, startY + y * sunLinesLength).
+		Set tempx to x.
+		Set x to x * cos15 - y * sin15.
+		Set y to tempx * sin15 + y * cos15.
+		Set startX to sunPosx + x * sunLinesGap.
+		Set startY to sunPosy + y * sunLinesGap.
+		Set the chords of sunLine to (startX, startY) and (startX + x * newLineLength, startY + y * newLineLength).
 
-	Set tempx to x.
-	Set x to x * cos30 - y * sin30.
-	Set y to tempx * sin30 + y * cos30.
-	Set startX to sunPosx + x * sunLinesGap.
-	Set startY to sunPosy + y * sunLinesGap.
-	Set the chords of sunLines6 to (startX, startY) and (startX + x * sunLinesLength / 2, startY + y * sunLinesLength / 2).
-	
-	Set tempx to x.
-	Set x to x * cos30 - y * sin30.
-	Set y to tempx * sin30 + y * cos30.
-	Set startX to sunPosx + x * sunLinesGap.
-	Set startY to sunPosy + y * sunLinesGap.
-	Set the chords of sunLines7 to (startX, startY) and (startX + x * sunLinesLength, startY + y * sunLinesLength).
+		Set index to index + 1.
+	Exit the while.
+Leave the function.
 
-	Set tempx to x.
-	Set x to x * cos30 - y * sin30.
-	Set y to tempx * sin30 + y * cos30.
-	Set startX to sunPosx + x * sunLinesGap.
-	Set startY to sunPosy + y * sunLinesGap.
-	Set the chords of sunLines8 to (startX, startY) and (startX + x * sunLinesLength / 2, startY + y * sunLinesLength / 2).
-	
-	Set tempx to x.
-	Set x to x * cos30 - y * sin30.
-	Set y to tempx * sin30 + y * cos30.
-	Set startX to sunPosx + x * sunLinesGap.
-	Set startY to sunPosy + y * sunLinesGap.
-	Set the chords of sunLines9 to (startX, startY) and (startX + x * sunLinesLength, startY + y * sunLinesLength).
+Begin a function called Gameloop. 
 
-	Set tempx to x.
-	Set x to x * cos30 - y * sin30.
-	Set y to tempx * sin30 + y * cos30.
-	Set startX to sunPosx + x * sunLinesGap.
-	Set startY to sunPosy + y * sunLinesGap.
-	Set the chords of sunLines10 to (startX, startY) and (startX + x * sunLinesLength / 2, startY + y * sunLinesLength / 2).
-	
-	Set tempx to x.
-	Set x to x * cos30 - y * sin30.
-	Set y to tempx * sin30 + y * cos30.
-	Set startX to sunPosx + x * sunLinesGap.
-	Set startY to sunPosy + y * sunLinesGap.
-	Set the chords of sunLines11 to (startX, startY) and (startX + x * sunLinesLength, startY + y * sunLinesLength).
-
-	Set tempx to x.
-	Set x to x * cos30 - y * sin30.
-	Set y to tempx * sin30 + y * cos30.
-	Set startX to sunPosx + x * sunLinesGap.
-	Set startY to sunPosy + y * sunLinesGap.
-	Set the chords of sunLines12 to (startX, startY) and (startX + x * sunLinesLength / 2, startY + y * sunLinesLength / 2).
-	
+	Call the function AnimateSun.
 Leave the function.
 
 Begin a function called ClickSun with a Circle called tempSun.
@@ -181,19 +97,11 @@ Begin a function called ClickSun with a Circle called tempSun.
 	Set the color of sun to (0, 0, 0, 255).
 
 	# Set all sunlines to Red
-	Set the color of sunLines1 to (255, 0, 0, 255).
-	Set the color of sunLines2 to (255, 0, 0, 255).
-	Set the color of sunLines3 to (255, 0, 0, 255).
-	Set the color of sunLines4 to (255, 0, 0, 255).
-	Set the color of sunLines5 to (255, 0, 0, 255).
-	Set the color of sunLines6 to (255, 0, 0, 255).
-	Set the color of sunLines7 to (255, 0, 0, 255).
-	Set the color of sunLines8 to (255, 0, 0, 255).
-	Set the color of sunLines9 to (255, 0, 0, 255).
-	Set the color of sunLines10 to (255, 0, 0, 255).
-	Set the color of sunLines11 to (255, 0, 0, 255).
-	Set the color of sunLines12 to (255, 0, 0, 255).
+	Set index to 0.
+	While index < sunLinesCount:
+		Set sunLine to index index of sunLinesList.
+		Set the color of sunLine to (255, 0, 0, 255).
 
-	
-
+		Set index to index + 1.
+	Exit the while.
 Leave the function.
