@@ -43,11 +43,15 @@ Lists:
 	Add <expr> to <Var>.
 	Remove <expr> from <Var>.
 	Remove index <int> from <Var>.
-	Set <Var> to index <int> of <List>.
+	index <int> of <list>				(In an expression)
+	length of <list>					(In an expression)
 	Ex: "Add 5 to MyList."
 	Ex: "Remove 5 from MyList."
 	Ex: "Remove index 2 from MyList."
 	Ex: "Set myVar to index 2 of MyList."
+	Ex: "Set myVar to index 2 of MyList + 2 / 7."
+	Ex: "Set myVar to length of MyList."
+	Ex: "Set myVar to length of MyList + 2 / 7."
 
 GUI:
 	Create a [global] <GUI Object> called <Var>.	# Same for Circle, line, and text
