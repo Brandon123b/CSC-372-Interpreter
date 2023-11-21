@@ -450,7 +450,12 @@ public class Interpreter {
 				storedLocalVars.push(localVars);
 				localVars = new HashMap<>(localVars);
 				nesting.push("while");
-				sb.append(indent + "while (" + ParseEvalExpr(matchers.get("loopStart").group(1), localVars) + ") {\n");
+				String[] tmp = ParseExpression(matchers.get("loopStart").group(1), localVars);
+				if (!tmp[0].equals("boolean")) {
+					error.print("SYNTAX ERROR: invalid condition in while statement", curLine);
+				} else {
+					sb.append(indent + "while (" + tmp[1] + ") {\n");
+				}
 				indent += "\t";
 			} else if (matchers.get("loopEnd").find()) {
 				if (nesting.empty() || !nesting.pop().equals("while")) {
@@ -464,7 +469,12 @@ public class Interpreter {
 				storedLocalVars.push(localVars);
 				localVars = new HashMap<>(localVars);
 				nesting.push("if");
-				sb.append(indent + "if (" + ParseEvalExpr(matchers.get("condStart").group(1), localVars) + ") {\n");
+				String[] tmp = ParseExpression(matchers.get("condStart").group(1), localVars);
+				if (!tmp[0].equals("boolean")) {
+					error.print("SYNTAX ERROR: invalid condition in if statement", curLine);
+				} else {
+					sb.append(indent + "if (" + tmp[1] + ") {\n");
+				}
 				indent += "\t";
 			} else if (matchers.get("condEnd").find()) {
 				if (nesting.empty() || !nesting.pop().equals("if")) {
@@ -949,6 +959,7 @@ public class Interpreter {
 		String[] var = CheckVariable(input, blockVars);
 		String[] math = ParseMathExpr(input, blockVars);
 		String eval = ParseEvalExpr(input, blockVars);
+		String equal = ParseEqualityExpr(input, blockVars);
 		String stringCat = ParseStringConcatExpr(input, blockVars);
 		String[] val = ParseValue(input);
 		String fnCall = ParseFunctionCall(input, blockVars, 0, (m,l)->{}, false);
@@ -962,7 +973,10 @@ public class Interpreter {
 		} else if (!eval.equals("")) {
 			ret[0] = "boolean";
 			ret[1] = eval;
-		}  else if (!stringCat.equals("")) {
+		} else if (!equal.equals("")) {
+			ret[0] = "boolean";
+			ret[1] = equal;
+		} else if (!stringCat.equals("")) {
 			ret[0] = "String";
 			ret[1] = stringCat;
 		} else if (!val[0].equals("")) {
