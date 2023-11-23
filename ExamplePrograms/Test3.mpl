@@ -2,7 +2,7 @@ Begin a function called TestLists.
 	
 	# Create an int list
 
-	Add 1 to list1.
+	Add 1 to global list1.
 	Add 2 to list1.
 	Add 3 to list1.
 

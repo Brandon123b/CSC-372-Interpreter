@@ -76,8 +76,13 @@ GUI:
 	// Text
 	Set the text of <Var> to <expr>.				# Text
 	Set the size of <Var> to <expr>.				# Font size
+
+	// key (Key is a string of the given key. Look at KeyList.txt for a list of keys) (Only useful in gameloop)
+	Get the key <key>.								# In an expression
+	Ex: "Set isPressed to Get the key A."
+	Ex: "If Get the key A, then: Print "A" to the console. Leave the if statement."
 	
 
-	Built in function "Gameloop" that is automatically called every frame (60fps?)
+	Built in function "Gameloop" that is automatically called every frame (50fps?)
 	This is optional, but important to allow movement in the GUI, so adding
 	"Begin a function called Gameloop." is a special case 

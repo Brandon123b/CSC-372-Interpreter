@@ -1,7 +1,7 @@
 SRC_DIR := src
 BIN_DIR := bin
 
-ARGS=50
+ARGS=55
 
 all: $(BIN_DIR)/Interpreter.class
 

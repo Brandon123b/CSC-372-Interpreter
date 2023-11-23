@@ -13,4 +13,6 @@ Begin a function called Fun.
 	Set global test to 1+2=3+4.
 	Set hello to "hello world!".
 	Set yay to 5+10*37+(32+3).
+
+	Set hi to Get the key F.
 Leave the function.

@@ -1,5 +1,7 @@
 import javax.swing.*;
 
+import javafx.scene.input.KeyCode;
+
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -44,10 +46,15 @@ class DrawingCanvas extends JPanel {
 	public List<DrawableObject> drawableObjects_ = new ArrayList<>();
 	private List<DrawableObject> objectsToRemove_ = new ArrayList<>(); // Avoid concurrent modification
 
+	private List<Integer> keysPressed_ = new ArrayList<>(); // List of keys currently pressed
+
 	private double scaleX_; // Scaling factor for X-axis
 	private double scaleY_; // Scaling factor for Y-axis
 
 	public DrawingCanvas() {
+
+		setFocusable(true);
+		requestFocus();
 
 		addMouseListener(new MouseAdapter() {
 			@Override
@@ -75,6 +82,23 @@ class DrawingCanvas extends JPanel {
 				// Calculate the scaling factors
 				scaleX_ = (double) getWidth() / 1920;	// Default logical size
 				scaleY_ = (double) getHeight() / 1080;	// Default logical size
+			}
+		});
+
+		// Add listener for keysPressed_
+		addKeyListener(new java.awt.event.KeyAdapter() {
+			public void keyPressed(java.awt.event.KeyEvent evt) {
+				if (!keysPressed_.contains(evt.getKeyCode())) {
+					keysPressed_.add(evt.getKeyCode());
+				}
+
+				System.out.println("Pressed " + evt.getKeyCode() + "	" + evt.getKeyChar() + "	" + evt.getKeyLocation());
+			}
+
+			public void keyReleased(java.awt.event.KeyEvent evt) {
+				keysPressed_.remove((Object) evt.getKeyCode());
+
+				System.out.println("Released " + evt.getKeyCode() + "	" + evt.getKeyChar() + "	" + evt.getKeyLocation());
 			}
 		});
 	}
@@ -123,6 +147,7 @@ class DrawingCanvas extends JPanel {
 		test = 1+2==3+4;
 		String hello = "hello world!";
 		int yay = 5+10*37+(32+3);
+		boolean hi = keysPressed_.contains(70);
 	}
 
 
@@ -139,14 +164,14 @@ abstract class DrawableObject {
 	private Consumer<DrawableObject> onClicked = input -> {
 	}; // Default empty lambda
 
-	public DrawableObject(int x, int y, Color color) {
+	public DrawableObject(double x, double y, Color color) {
 		this.x = x;
 		this.y = y;
 		this.color = color;
 	}
 
 	// Moves the object to the specified position
-	public void moveTo(int x, int y) {
+	public void moveTo(double x, double y) {
 		this.x = x;
 		this.y = y;
 	}
@@ -170,7 +195,7 @@ abstract class DrawableObject {
 	public abstract void draw(Graphics g);
 
 	// Used for checking if a point is inside the object (for mouse clicks)
-	public abstract boolean contains(int x, int y);
+	public abstract boolean contains(double x, double y);
 }
 
 class Box extends DrawableObject {
@@ -182,13 +207,13 @@ class Box extends DrawableObject {
 		this.height = 100;
 	}
 
-	public Box(int x, int y, int width, int height, Color color) {
+	public Box(double x, double y, double width, double height, Color color) {
 		super(x, y, color);
 		this.width = width;
 		this.height = height;
 	}
 
-	public void setSize(int width, int height) {
+	public void setSize(double width, double height) {
 		this.width = width;
 		this.height = height;
 	}
@@ -205,7 +230,7 @@ class Box extends DrawableObject {
 	}
 
 	@Override
-	public boolean contains(int x, int y) {
+	public boolean contains(double x, double y) {
 		return x >= this.x && x <= this.x + width && y >= this.y && y <= this.y + height;
 	}
 }
@@ -239,7 +264,7 @@ class Circle extends DrawableObject {
 	}
 
 	@Override
-	public boolean contains(int x, int y) {
+	public boolean contains(double x, double y) {
 		double dx = this.x - x;
 		double dy = this.y - y;
 		return dx * dx + dy * dy <= radius * radius;
@@ -291,7 +316,7 @@ class Line extends DrawableObject {
 	}
 
 	@Override
-	public boolean contains(int x, int y) {
+	public boolean contains(double x, double y) {
 		return false; // Lines are not clickable (yet?)
 	}
 }
@@ -305,7 +330,7 @@ class Text extends DrawableObject {
 		this.text = "";
 	}
 
-	public Text(int x, int y, String text, Color color) {
+	public Text(double x, double y, String text, Color color) {
 		super(x, y, color);
 		this.text = text;
 	}
@@ -338,7 +363,7 @@ class Text extends DrawableObject {
 	}
 
 	@Override
-	public boolean contains(int x, int y) {
+	public boolean contains(double x, double y) {
 		// Text objects are not clickable, so always return false
 		return false;
 	}

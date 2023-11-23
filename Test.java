@@ -11,10 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class MainTemplate {
+public class Test {
 
 	public static void main(String[] args) {
-		JFrame frame = new JFrame("MainTemplate");
+		JFrame frame = new JFrame("Test");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setSize(1920 / 2, 1080 / 2); // Default window size
 		frame.setLocationRelativeTo(null); // Center the window
@@ -24,7 +24,16 @@ public class MainTemplate {
 		frame.add(canvas);
 		frame.setVisible(true);
 
-		/* {Call_Start} */ // consider program args
+		if(args.length != 0) {
+			System.err.println("Invalid number of arguments specified!");
+			System.exit(1);
+		}
+		try {
+			canvas.pie();
+		} catch (Exception e) {
+			System.err.println("Invalid arguments specified!");
+			System.exit(1);
+		} // consider program args
 
 		canvas.startDrawing(); // Start drawing on the canvas
 	}
@@ -83,13 +92,13 @@ class DrawingCanvas extends JPanel {
 					keysPressed_.add(evt.getKeyCode());
 				}
 
-				// System.out.println("Pressed " + evt.getKeyCode() + "	" + evt.getKeyChar() + "	" + evt.getKeyLocation());
+				System.out.println("Pressed " + evt.getKeyCode() + "	" + evt.getKeyChar() + "	" + evt.getKeyLocation());
 			}
 
 			public void keyReleased(java.awt.event.KeyEvent evt) {
 				keysPressed_.remove((Object) evt.getKeyCode());
 
-				// System.out.println("Released " + evt.getKeyCode() + "	" + evt.getKeyChar() + "	" + evt.getKeyLocation());
+				System.out.println("Released " + evt.getKeyCode() + "	" + evt.getKeyChar() + "	" + evt.getKeyLocation());
 			}
 		});
 	}
@@ -98,7 +107,7 @@ class DrawingCanvas extends JPanel {
 	public void startDrawing() {
 		Timer timer = new Timer(20, e -> {
 
-			/* {Call_GameLoop} */ // Only if it exists
+			Gameloop(); // Only if it exists
 			repaint();
 		});
 		timer.start();
@@ -126,13 +135,52 @@ class DrawingCanvas extends JPanel {
 	/*                           Interpreted Global Vars                          */
 	/* -------------------------------------------------------------------------- */
 
-/* {Global_Vars} */
+	int line1ly;
+	Circle cirk;
+	int line1lx;
+	int line1rx;
+	int xPos;
+	Line line1;
+	int line1ry;
+
 
 	/* -------------------------------------------------------------------------- */
 	/*                            Interpreted Functions                           */
 	/* -------------------------------------------------------------------------- */
 
-/* {Functions} */
+	public void pie(){
+
+		Box Boxey = new Box();
+		drawableObjects_.add(Boxey);
+		Boxey.moveTo(100.0, 100.0);
+		Boxey.setSize(200, 500);
+		Boxey.setColor(new Color(255, 0, 0, 50));
+		cirk = new Circle();
+		drawableObjects_.add(cirk);
+		cirk.setRadius(30);
+		xPos = 0;
+		line1 = new Line();
+		drawableObjects_.add(line1);
+		line1lx = 0;
+		line1ly = 0;
+		line1rx = 1920;
+		line1ry = 1080;
+		line1.setSize(10);
+		Text text1 = new Text();
+		drawableObjects_.add(text1);
+		text1.setText("Hello World!"+"  Goodbye!");
+		text1.moveTo(100, 100);
+		text1.setSize(80);
+	}
+	public void Gameloop(){
+
+		xPos = xPos+2;
+		cirk.moveTo(xPos, 500);
+		line1lx = line1lx+3;
+		line1rx = line1rx-3;
+		line1.setLine(line1lx, line1ly, line1rx, line1ry);
+	}
+
 
 }
 

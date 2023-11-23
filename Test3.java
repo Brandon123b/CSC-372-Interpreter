@@ -11,10 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class MainTemplate {
+public class Test3 {
 
 	public static void main(String[] args) {
-		JFrame frame = new JFrame("MainTemplate");
+		JFrame frame = new JFrame("Test3");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setSize(1920 / 2, 1080 / 2); // Default window size
 		frame.setLocationRelativeTo(null); // Center the window
@@ -24,7 +24,16 @@ public class MainTemplate {
 		frame.add(canvas);
 		frame.setVisible(true);
 
-		/* {Call_Start} */ // consider program args
+		if(args.length != 0) {
+			System.err.println("Invalid number of arguments specified!");
+			System.exit(1);
+		}
+		try {
+			canvas.TestLists();
+		} catch (Exception e) {
+			System.err.println("Invalid arguments specified!");
+			System.exit(1);
+		} // consider program args
 
 		canvas.startDrawing(); // Start drawing on the canvas
 	}
@@ -126,13 +135,82 @@ class DrawingCanvas extends JPanel {
 	/*                           Interpreted Global Vars                          */
 	/* -------------------------------------------------------------------------- */
 
-/* {Global_Vars} */
+	List<Integer> list1 = new ArrayList<>();
+
 
 	/* -------------------------------------------------------------------------- */
 	/*                            Interpreted Functions                           */
 	/* -------------------------------------------------------------------------- */
 
-/* {Functions} */
+	public void TestLists(){
+
+		list1.add(1);
+		list1.add(2);
+		list1.add(3);
+		list1.remove(Integer.valueOf(3));
+		list1.remove(0);
+		ArrayList<String> list2 = new ArrayList<>();
+		list2.add("1");
+		list2.add("2");
+		list2.add("3");
+		list2.remove("3");
+		list2.remove(0);
+		ArrayList<Double> list3 = new ArrayList<>();
+		list3.add(1.0);
+		list3.add(2.0);
+		list3.add(3.0);
+		list3.remove(3.0);
+		list3.remove(0);
+		System.out.println("Lists:");
+		System.out.println(list1);
+		System.out.println(list2);
+		System.out.println(list3);
+		System.out.println("");
+		int t1 = list1.get(0);
+		String t2 = list2.get(0);
+		double t3 = list3.get(0);
+		System.out.println("List Gets:");
+		System.out.println(t1);
+		System.out.println(t2);
+		System.out.println(t3);
+		System.out.println("");
+		Box box1 = new Box();
+		drawableObjects_.add(box1);
+		Box box2 = new Box();
+		drawableObjects_.add(box2);
+		Box box3 = new Box();
+		drawableObjects_.add(box3);
+		ArrayList<Box> list4 = new ArrayList<>();
+		list4.add(box1);
+		list4.add(box2);
+		list4.add(box3);
+		list4.remove(0);
+		Box out = list4.get(0);
+		System.out.println("GUI Box:");
+		System.out.println(out);
+		System.out.println("");
+		t1 = list1.get(0)+list1.get(0);
+		t2 = list2.get(0)+list2.get(0);
+		t3 = list3.get(0)+list3.get(0);
+		System.out.println("Expressions:");
+		System.out.println(t1);
+		System.out.println(t2);
+		System.out.println(t3);
+		ArrayList<Integer> list5 = new ArrayList<>();
+		list5.add(1);
+		System.out.println("Len: "+list5.size()+" (Exp: 1)");
+		list5.add(2);
+		System.out.println("Len: "+list5.size()+" (Exp: 2)");
+		list5.add(3);
+		System.out.println("Len: "+list5.size()+" (Exp: 3)");
+		list5.remove(Integer.valueOf(3));
+		System.out.println("Len: "+list5.size()+" (Exp: 2)");
+		list5.remove(0);
+		System.out.println("Len: "+list5.size()+" (Exp: 1)");
+		list5.remove(0);
+		System.out.println("Len: "+list5.size()+" (Exp: 0)");
+	}
+
 
 }
 

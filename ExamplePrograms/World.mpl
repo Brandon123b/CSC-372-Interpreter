@@ -18,6 +18,8 @@ Begin a function called Init with an int called _seed.
 	Call the function CreateSun.
 
 	Call the function InitTerrain.
+
+	Call the function InitPlayer.
 Leave the function.
 
 Begin a function called CreateSun.
@@ -72,6 +74,30 @@ Begin a function called InitTerrain.
 	# The next block to load when visible
 	Set global NextRightBlock to 0.
 	Set global NextRightBlockHeight to 1080/BlockSize/2.
+	Set global NextLeftBlock to 0-1.
+	Set global NextLeftBlockHeight to 1080/BlockSize/2.
+
+	# Return is broken in this language, so we use a global
+	Set global intRet to 0.
+Leave the function.
+
+Begin a function called InitPlayer.
+
+	# Create camera vars
+	Set global camX to 0.0.
+	Set global camY to 0.0.
+	Set global camSpeed to 10.0.
+	Set global lastCamX to 0.0.
+	Set global lastCamY to 0.0.
+
+	# Create player vars
+	Set global pX to 0.0.
+	Set global pY to 300.0.
+	Set global pSpeed to 15.0.
+
+	Create a global Box called player.
+	Set the size of player to 50 and 50.
+	Set the color of player to (255, 0, 0, 255).
 Leave the function.
 
 # ---------------------------------------------------------------------------- #
@@ -116,13 +142,22 @@ Leave the function.
 # If a new part is onscreen, then load a new colmn of blocks
 Begin a function called LoadTerrain.
 
-	# Load a block if it is visible
-	If NextRightBlock * BlockSize < 1920, then:
-		Call the function GenerateCol with NextRightBlock and 1050/BlockSize/2.
+	# Load a Load a new right chunk if it is visible
+	If NextRightBlock * BlockSize + 0.0 < camX + 1920/2 + BlockSize * 4, then:
+		Call the function GenerateCol with NextRightBlock and NextRightBlockHeight.
 		Set NextRightBlock to NextRightBlock + 1.
-		Set offset to 0.
-		Set offset to Call the function Random with 3.
-		Set NextRightBlockHeight to NextRightBlockHeight + 1.
+		Call the function Random with 3.
+		Set intRet to intRet - 1.
+		Set NextRightBlockHeight to NextRightBlockHeight + intRet.
+	Leave the if statement.
+
+	# Load a Load a new left chunk if it is visible
+	If NextLeftBlock * BlockSize + 0.0 > camX - 1920/2 - BlockSize * 4, then:
+		Call the function GenerateCol with NextLeftBlock and NextLeftBlockHeight.
+		Set NextLeftBlock to NextLeftBlock - 1.
+		Call the function Random with 3.
+		Set intRet to intRet - 1.
+		Set NextLeftBlockHeight to NextLeftBlockHeight + intRet.
 	Leave the if statement.
 Leave the function.
 
@@ -150,16 +185,16 @@ Begin a function called SpawnBlock with an int called XPos, an int called YPos, 
 	If depth = 0, then:
 		Set the color of block to (0, 200, 0, 255).
 	Leave the if statement.
-	If depth = 1, then:
+	If depth = 1 or depth = 2, then:
 		Set the color of block to (166, 139, 113, 255).
 	Leave the if statement.
-	If depth = 2, then:
+	If depth = 3 or depth = 4, then:
 		Set the color of block to (136, 103, 78, 255).
 	Leave the if statement.
-	If depth = 3, then:
+	If depth = 5 or depth = 6, then:
 		Set the color of block to (102, 65, 33, 255).
 	Leave the if statement.
-	If depth >= 4, then:
+	If depth >= 7, then:
 		Set the color of block to (84, 45, 28, 255).
 	Leave the if statement.
 
@@ -168,6 +203,8 @@ Begin a function called SpawnBlock with an int called XPos, an int called YPos, 
 
 	# Add the block to the list
 	Add block to global blocksList.
+	Add XPos * BlockSize to global blocksXList.
+	Add YPos * BlockSize to global blocksYList.
 Leave the function.
 
 # ---------------------------------------------------------------------------- #
@@ -179,7 +216,10 @@ Begin a function called Random with an int called max.
 
 	# Simple, but effective random number generator
 	Set seed to seed * 1103515245 + 12345.
-	Return seed % max to the caller.
+	If seed < 0, then:
+		Set seed to seed - seed * 2.
+	Leave the if statement.
+	Set global intRet to seed % max.
 Leave the function.
 
 # ---------------------------------------------------------------------------- #
@@ -192,6 +232,40 @@ Begin a function called Gameloop.
 	
 	# Load terrain
 	Call the function LoadTerrain.
+
+	If Get the key F, then:
+		Print "F" to the console.
+	Leave the if statement.
+
+	Call the function MoveCamera.
+Leave the function.
+
+Begin a function called MoveCamera.
+
+	# Move the player
+	If Get the key A, then:
+		Set pX to pX - pSpeed.
+	Leave the if statement.
+	If Get the key D, then:
+		Set pX to pX + pSpeed.
+	Leave the if statement.
+
+	# Move the camera towards the player
+	Set camX to camX + (pX - camX) / camSpeed.
+
+	# Set the new position of all blocks
+	Set i to 0.
+	While i < length of blocksList:
+		Set block to index i of blocksList.
+		Set newX to index i of blocksXList - camX + 1920/2.
+		Set newY to index i of blocksYList.
+		Move block to newX and newY.
+
+		Set i to i + 1.
+	Exit the while.
+
+	# Move the player (with respect to the camera)
+	Move player to pX - camX + 1920/2 and pY.
 Leave the function.
 
 # ---------------------------------------------------------------------------- #

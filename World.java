@@ -1,5 +1,7 @@
 import javax.swing.*;
 
+import javafx.scene.input.KeyCode;
+
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -44,10 +46,15 @@ class DrawingCanvas extends JPanel {
 	public List<DrawableObject> drawableObjects_ = new ArrayList<>();
 	private List<DrawableObject> objectsToRemove_ = new ArrayList<>(); // Avoid concurrent modification
 
+	private List<Integer> keysPressed_ = new ArrayList<>(); // List of keys currently pressed
+
 	private double scaleX_; // Scaling factor for X-axis
 	private double scaleY_; // Scaling factor for Y-axis
 
 	public DrawingCanvas() {
+
+		setFocusable(true);
+		requestFocus();
 
 		addMouseListener(new MouseAdapter() {
 			@Override
@@ -75,6 +82,23 @@ class DrawingCanvas extends JPanel {
 				// Calculate the scaling factors
 				scaleX_ = (double) getWidth() / 1920;	// Default logical size
 				scaleY_ = (double) getHeight() / 1080;	// Default logical size
+			}
+		});
+
+		// Add listener for keysPressed_
+		addKeyListener(new java.awt.event.KeyAdapter() {
+			public void keyPressed(java.awt.event.KeyEvent evt) {
+				if (!keysPressed_.contains(evt.getKeyCode())) {
+					keysPressed_.add(evt.getKeyCode());
+				}
+
+				// System.out.println("Pressed " + evt.getKeyCode() + "	" + evt.getKeyChar() + "	" + evt.getKeyLocation());
+			}
+
+			public void keyReleased(java.awt.event.KeyEvent evt) {
+				keysPressed_.remove((Object) evt.getKeyCode());
+
+				// System.out.println("Released " + evt.getKeyCode() + "	" + evt.getKeyChar() + "	" + evt.getKeyLocation());
 			}
 		});
 	}
@@ -111,26 +135,40 @@ class DrawingCanvas extends JPanel {
 	/*                           Interpreted Global Vars                          */
 	/* -------------------------------------------------------------------------- */
 
-	int sunLinesLength;
+	int intRet;
 	int seed;
-	double cos1;
-	int sunLineSize;
+	double camY;
+	double camX;
 	double cos15;
-	double sin1;
 	double sunLineY;
 	Circle sun;
 	double sunLineX;
-	int NextRightBlock;
 	int NextRightBlockHeight;
-	List<Box> blocksList = new ArrayList<>();
-	Box backGround;
+	double pSpeed;
 	int sunLinesCount;
-	int sunLinesGap;
-	int sunRadius;
+	int NextLeftBlock;
 	int sunPosy;
 	int sunPosx;
-	double sin15;
+	List<Integer> blocksYList = new ArrayList<>();
+	double lastCamY;
 	List<Line> sunLinesList = new ArrayList<>();
+	Box player;
+	int sunLinesLength;
+	double cos1;
+	double lastCamX;
+	int NextLeftBlockHeight;
+	double pX;
+	int sunLineSize;
+	double pY;
+	double sin1;
+	List<Integer> blocksXList = new ArrayList<>();
+	int NextRightBlock;
+	double camSpeed;
+	List<Box> blocksList = new ArrayList<>();
+	Box backGround;
+	int sunLinesGap;
+	int sunRadius;
+	double sin15;
 	int BlockSize;
 
 
@@ -149,6 +187,7 @@ class DrawingCanvas extends JPanel {
 		backGround.setColor(new Color(135, 206, 250, 255));
 		CreateSun();
 		InitTerrain();
+		InitPlayer();
 	}
 	public void CreateSun(){
 
@@ -186,6 +225,24 @@ class DrawingCanvas extends JPanel {
 		BlockSize = 50;
 		NextRightBlock = 0;
 		NextRightBlockHeight = 1080/BlockSize/2;
+		NextLeftBlock = 0-1;
+		NextLeftBlockHeight = 1080/BlockSize/2;
+		intRet = 0;
+	}
+	public void InitPlayer(){
+
+		camX = 0.0;
+		camY = 0.0;
+		camSpeed = 10.0;
+		lastCamX = 0.0;
+		lastCamY = 0.0;
+		pX = 0.0;
+		pY = 300.0;
+		pSpeed = 15.0;
+		player = new Box();
+		drawableObjects_.add(player);
+		player.setSize(50, 50);
+		player.setColor(new Color(255, 0, 0, 255));
 	}
 	public void AnimateSun(){
 
@@ -211,11 +268,19 @@ class DrawingCanvas extends JPanel {
 	}
 	public void LoadTerrain(){
 
-		if (NextRightBlock*BlockSize<1920) {
-			GenerateCol(NextRightBlock, 1050/BlockSize/2);
+		if (NextRightBlock*BlockSize+0.0<camX+1920/2+BlockSize*4) {
+			GenerateCol(NextRightBlock, NextRightBlockHeight);
 			NextRightBlock = NextRightBlock+1;
-			void offset = Random(3);
-			NextRightBlockHeight = NextRightBlockHeight+1;
+			Random(3);
+			intRet = intRet-1;
+			NextRightBlockHeight = NextRightBlockHeight+intRet;
+		}
+		if (NextLeftBlock*BlockSize+0.0>camX-1920/2-BlockSize*4) {
+			GenerateCol(NextLeftBlock, NextLeftBlockHeight);
+			NextLeftBlock = NextLeftBlock-1;
+			Random(3);
+			intRet = intRet-1;
+			NextLeftBlockHeight = NextLeftBlockHeight+intRet;
 		}
 	}
 	public void GenerateCol(int XCol, int height){
@@ -236,30 +301,58 @@ class DrawingCanvas extends JPanel {
 		if (depth==0) {
 			block.setColor(new Color(0, 200, 0, 255));
 		}
-		if (depth==1) {
+		if (depth==1||depth==2) {
 			block.setColor(new Color(166, 139, 113, 255));
 		}
-		if (depth==2) {
+		if (depth==3||depth==4) {
 			block.setColor(new Color(136, 103, 78, 255));
 		}
-		if (depth==3) {
+		if (depth==5||depth==6) {
 			block.setColor(new Color(102, 65, 33, 255));
 		}
-		if (depth>=4) {
+		if (depth>=7) {
 			block.setColor(new Color(84, 45, 28, 255));
 		}
 		block.setOnClick(obj -> ClickBlock((Box)obj));
 		blocksList.add(block);
+		blocksXList.add(XPos * BlockSize);
+		blocksYList.add(YPos * BlockSize);
 	}
-	public int Random(int max){
+	public void Random(int max){
 
 		seed = seed*1103515245+12345;
-		return seed%max;
+		if (seed<0) {
+			seed = seed-seed*2;
+		}
+		intRet = seed%max;
 	}
 	public void Gameloop(){
 
 		AnimateSun();
 		LoadTerrain();
+		if (keysPressed_.contains(70)) {
+			System.out.println("F");
+		}
+		MoveCamera();
+	}
+	public void MoveCamera(){
+
+		if (keysPressed_.contains(65)) {
+			pX = pX-pSpeed;
+		}
+		if (keysPressed_.contains(68)) {
+			pX = pX+pSpeed;
+		}
+		camX = camX+(pX-camX)/camSpeed;
+		int i = 0;
+		while (i<blocksList.size()) {
+			Box block = blocksList.get(i);
+			double newX = blocksXList.get(i)-camX+1920/2;
+			int newY = blocksYList.get(i);
+			block.moveTo(newX, newY);
+			i = i+1;
+		}
+		player.moveTo(pX-camX+1920/2, pY);
 	}
 	public void ClickSun(Circle tempSun){
 

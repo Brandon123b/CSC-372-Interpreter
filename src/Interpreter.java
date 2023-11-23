@@ -23,6 +23,8 @@ public class Interpreter {
 	static List<Function> functions;
 	static String input;	// Parce Block needs this for some reason (Storing it here for now)
 
+	static Map<String, Integer> keyCodes = new HashMap<>();
+
 	public static void main(String[] args) {
 
 		// Get input file from command line
@@ -40,6 +42,9 @@ public class Interpreter {
 
 		// Parse the input into functions
 		functions = splitIntoFunctions(input);
+
+		// Map keys (for key presses)
+		MapKeys();
 
 		// Check for errors before continuing
 		if (hasError)
@@ -175,8 +180,12 @@ public class Interpreter {
 	public static String GlobalVariables() {
 		StringBuilder sb = new StringBuilder();
 		for (Map.Entry<String, String> entry : globalVars.entrySet()) {
-			if (entry.getValue().contains("List"))
-				sb.append("\t").append(entry.getValue()).append(" ").append(entry.getKey()).append(" = new ArrayList<>();\n");
+			if (entry.getValue().contains("List")){
+				// Pull out the type and convert it to a java list type
+				String type = entry.getValue().substring(5, entry.getValue().length() - 1);
+				type = GetListType(type);
+				sb.append("\t").append("List<").append(type).append("> ").append(entry.getKey()).append(" = new ArrayList<>();\n");
+			}
 			else
 				sb.append("\t").append(entry.getValue()).append(" ").append(entry.getKey()).append(";\n");
 		}
@@ -786,6 +795,7 @@ public class Interpreter {
 			return "";
 		} else if (!left[0].equals(right[0])) {
 			// type mismatch
+			System.out.println("TYPE ERROR: type mismatch in equality statement");
 			return "";
 		}
 
@@ -968,6 +978,21 @@ public class Interpreter {
 		String fnCall = ParseFunctionCall(input, blockVars, 0, (m,l)->{}, false);
 		String[] listGet = ParseListGet(input, blockVars);
 		String[] listLength = ParseListLength(input, blockVars);
+		String[] keyGet = ParseGetKey(input, blockVars);
+
+		if (input.contains(" test < 500")){
+			System.out.println("test");
+			System.out.println("Var: " + var[0] + " " + var[1]);
+			System.out.println("Math: " + math[0] + " " + math[1]);
+			System.out.println("Eval: " + eval);
+			System.out.println("Equal: " + equal);
+			System.out.println("StringCat: " + stringCat);
+			System.out.println("Val: " + val[0] + " " + val[1]);
+			System.out.println("FnCall: " + fnCall);
+			System.out.println("ListGet: " + listGet[0] + " " + listGet[1]);
+			System.out.println("ListLength: " + listLength[0] + " " + listLength[1]);
+			System.out.println("KeyGet: " + keyGet[0] + " " + keyGet[1]);
+		}
 		
 		if (!var[0].equals("")) {
 			ret = var;
@@ -996,6 +1021,8 @@ public class Interpreter {
 			ret = listGet;
 		} else if (!listLength[0].equals("")) {
 			ret = listLength;
+		} else if (!keyGet[0].equals("")) {
+			ret = keyGet;
 		}
 
 		return ret;
@@ -1101,6 +1128,30 @@ public class Interpreter {
 
 		// Return the index with a type of the list
 		return new String[]{"int", listLength};
+	}
+
+	// Parses a "get key" statement
+	public static String[] ParseGetKey(String input, Map<String, String> blockVars){
+		
+		Matcher matcher = Pattern.compile("^Get the key (\\S+)$").matcher(input.trim());
+
+		// This is not a "Get key" statement
+		if (!matcher.find())
+			return new String[]{"", ""};
+
+		String key = matcher.group(1);
+
+		// See if key is in the keys list
+		if (!keyCodes.containsKey(key)){
+			System.out.println("Error in parsing Get key statement:");
+			System.out.println(String.format("  SYNTAX ERROR: Key \"%s\" does not exist\n", key));
+			return new String[]{"boolean", "false"};
+		}
+
+		String out = "keysPressed_.contains(" + keyCodes.get(key) + ")";
+
+		// Return the index with a type of the list
+		return new String[]{"boolean", out};
 	}
 
 	/* ----------------------------- GUI Statements ----------------------------- */
@@ -1865,6 +1916,7 @@ public class Interpreter {
 
 		// Create a list if it does not already exist
 		if (checklistName[0].equals("")) {
+			String listType = GetListType(checkElementName[0]);
 
 			if (isGlobal){
 				globalVars.put(listName, "List<" + checkElementName[0] + ">");
@@ -1872,7 +1924,6 @@ public class Interpreter {
 			else {
 
 				blockVars.put(listName, "List<" + checkElementName[0] + ">");
-				String listType = GetListType(checkElementName[0]);
 				if (listType.equals("")){
 					System.out.println("Error in parsing List Add statement:");
 					System.out.println(String.format("  SYNTAX ERROR: (line %d) Invalid type for list \"%s\"", start, checkElementName[0]));
@@ -2018,6 +2069,17 @@ public class Interpreter {
 			default:
 				return ParseGuiType(type, 0);
 		}
+	}
+
+	// Creates a map for what keys are what (Not great, but don't see better option)
+	public static void MapKeys(){
+		                                                  
+        for(int i = 0; i < 525; ++i) {                                                    
+            String text = java.awt.event.KeyEvent.getKeyText(i);                              
+            if(!text.contains("Unknown keyCode: ")) {                                         
+                keyCodes.put(text, i);                             
+            }                                                                                 
+        }  
 	}
 
 	/* -------------------------------------------------------------------------- */

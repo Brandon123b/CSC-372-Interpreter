@@ -48,3 +48,14 @@ Gameloop:
 	The Gameloop is an optional function. Any function called Gameloop will be automatically called every frame. This is useful for animations 
 	and games. The gameloop function is the only function that will be called after the initial program is ran. This means that it must be Used
 	to allow any code to run after the first frame. Basically, not using Gameloop means a boring program that only runs once. 
+
+# ---------------------------------------------------------------------------- #
+#                                Recomendations                                #
+# ---------------------------------------------------------------------------- #
+
+Test often:
+	It is very easy to make a simple mistake in this language. I recomend testing your program often to make sure it is working as intended.
+
+Look at the top error first:
+	The program might skip a line if an error occurs, potentially causing subsequent errors. I recommend addressing the first error first to ensure 
+	it's fixed before examining other errors. Often, resolving the initial error can automatically resolve the others.
