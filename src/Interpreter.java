@@ -796,6 +796,9 @@ public class Interpreter {
 		} else if (!left[0].equals(right[0])) {
 			// type mismatch
 			System.out.println("TYPE ERROR: type mismatch in equality statement");
+			System.out.println("Statement: " + input);
+			System.out.println("Left operand is type " + left[0] + ", right operand is type " + right[0]);
+			System.out.println("Equality statements must have operands of the same type");
 			return "";
 		}
 

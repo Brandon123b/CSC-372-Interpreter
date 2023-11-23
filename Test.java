@@ -1,7 +1,5 @@
 import javax.swing.*;
 
-import javafx.scene.input.KeyCode;
-
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -92,13 +90,13 @@ class DrawingCanvas extends JPanel {
 					keysPressed_.add(evt.getKeyCode());
 				}
 
-				System.out.println("Pressed " + evt.getKeyCode() + "	" + evt.getKeyChar() + "	" + evt.getKeyLocation());
+				// System.out.println("Pressed " + evt.getKeyCode() + "	" + evt.getKeyChar() + "	" + evt.getKeyLocation());
 			}
 
 			public void keyReleased(java.awt.event.KeyEvent evt) {
 				keysPressed_.remove((Object) evt.getKeyCode());
 
-				System.out.println("Released " + evt.getKeyCode() + "	" + evt.getKeyChar() + "	" + evt.getKeyLocation());
+				// System.out.println("Released " + evt.getKeyCode() + "	" + evt.getKeyChar() + "	" + evt.getKeyLocation());
 			}
 		});
 	}

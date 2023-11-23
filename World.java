@@ -1,7 +1,5 @@
 import javax.swing.*;
 
-import javafx.scene.input.KeyCode;
-
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -135,25 +133,31 @@ class DrawingCanvas extends JPanel {
 	/*                           Interpreted Global Vars                          */
 	/* -------------------------------------------------------------------------- */
 
+	double pSize;
+	List<Double> cloudsYList = new ArrayList<>();
 	int intRet;
 	int seed;
 	double camY;
 	double camX;
+	double globalCloudsTimer;
 	double cos15;
 	double sunLineY;
 	Circle sun;
 	double sunLineX;
 	int NextRightBlockHeight;
 	double pSpeed;
+	List<Double> cloudsXList = new ArrayList<>();
 	int sunLinesCount;
 	int NextLeftBlock;
+	boolean isGrounded;
 	int sunPosy;
 	int sunPosx;
-	List<Integer> blocksYList = new ArrayList<>();
+	List<Double> blocksYList = new ArrayList<>();
 	double lastCamY;
 	List<Line> sunLinesList = new ArrayList<>();
 	Box player;
 	int sunLinesLength;
+	List<Circle> cloudsList = new ArrayList<>();
 	double cos1;
 	double lastCamX;
 	int NextLeftBlockHeight;
@@ -161,7 +165,7 @@ class DrawingCanvas extends JPanel {
 	int sunLineSize;
 	double pY;
 	double sin1;
-	List<Integer> blocksXList = new ArrayList<>();
+	List<Double> blocksXList = new ArrayList<>();
 	int NextRightBlock;
 	double camSpeed;
 	List<Box> blocksList = new ArrayList<>();
@@ -170,6 +174,8 @@ class DrawingCanvas extends JPanel {
 	int sunRadius;
 	double sin15;
 	int BlockSize;
+	double nextCloud;
+	double pVelY;
 
 
 	/* -------------------------------------------------------------------------- */
@@ -188,6 +194,7 @@ class DrawingCanvas extends JPanel {
 		CreateSun();
 		InitTerrain();
 		InitPlayer();
+		InitClouds();
 	}
 	public void CreateSun(){
 
@@ -239,10 +246,27 @@ class DrawingCanvas extends JPanel {
 		pX = 0.0;
 		pY = 300.0;
 		pSpeed = 15.0;
+		pVelY = 0.0;
+		pSize = 50.0;
+		isGrounded = false;
 		player = new Box();
 		drawableObjects_.add(player);
-		player.setSize(50, 50);
+		player.setSize(pSize, pSize);
 		player.setColor(new Color(255, 0, 0, 255));
+	}
+	public void InitClouds(){
+
+		Circle cloud = new Circle();
+		drawableObjects_.add(cloud);
+		cloudsList.add(cloud);
+		cloudsXList.add(0.0);
+		cloudsYList.add(0.0);
+		objectsToRemove_.add(cloud);
+		cloudsList.remove(0);
+		cloudsXList.remove(0);
+		cloudsYList.remove(0);
+		globalCloudsTimer = 0.0;
+		nextCloud = 0.0;
 	}
 	public void AnimateSun(){
 
@@ -266,6 +290,30 @@ class DrawingCanvas extends JPanel {
 			index = index+1;
 		}
 	}
+	public void AnimateClouds(){
+
+		globalCloudsTimer = globalCloudsTimer-4.0;
+		int i = 0;
+		while (i<cloudsList.size()) {
+			Circle cloud = cloudsList.get(i);
+			double newX = cloudsXList.get(i);
+			double newY = cloudsYList.get(i);
+			cloud.moveTo(newX+globalCloudsTimer, newY);
+			if (newX+globalCloudsTimer<0.0-400.0) {
+				objectsToRemove_.add(cloud);
+				cloudsList.remove(i);
+				cloudsXList.remove(i);
+				cloudsYList.remove(i);
+				i = i-1;
+			}
+			i = i+1;
+		}
+		if (nextCloud>=globalCloudsTimer) {
+			SpawnCloud();
+			Random(1000);
+			nextCloud = globalCloudsTimer-intRet;
+		}
+	}
 	public void LoadTerrain(){
 
 		if (NextRightBlock*BlockSize+0.0<camX+1920/2+BlockSize*4) {
@@ -285,6 +333,10 @@ class DrawingCanvas extends JPanel {
 	}
 	public void GenerateCol(int XCol, int height){
 
+		Random(9);
+		if (intRet==1) {
+			SpawnTree(XCol, height);
+		}
 		int depth = 0;
 		while (height<1080) {
 			SpawnBlock(XCol, height, depth);
@@ -298,6 +350,9 @@ class DrawingCanvas extends JPanel {
 		drawableObjects_.add(block);
 		block.setSize(BlockSize+1, BlockSize+1);
 		block.moveTo(XPos*BlockSize, YPos*BlockSize);
+		if (depth==0-1) {
+			block.setColor(new Color(166, 139, 113, 255));
+		}
 		if (depth==0) {
 			block.setColor(new Color(0, 200, 0, 255));
 		}
@@ -315,8 +370,54 @@ class DrawingCanvas extends JPanel {
 		}
 		block.setOnClick(obj -> ClickBlock((Box)obj));
 		blocksList.add(block);
-		blocksXList.add(XPos * BlockSize);
-		blocksYList.add(YPos * BlockSize);
+		blocksXList.add(XPos * BlockSize + 0.0);
+		blocksYList.add(YPos * BlockSize + 0.0);
+	}
+	public void SpawnTree(int XPos, int YPos){
+
+		Random(5);
+		intRet = intRet+4;
+		int i = 0;
+		while (i<intRet) {
+			int branchY = YPos-i;
+			SpawnBlock(XPos, branchY, 0-1);
+			i = i+1;
+		}
+		int top = YPos-intRet-1;
+		SpawnBlock(XPos, top, 0);
+		top = top+1;
+		int leafX = XPos-1;
+		while (leafX<=XPos+1) {
+			SpawnBlock(leafX, top, 0);
+			leafX = leafX+1;
+		}
+		top = top+1;
+		leafX = XPos-2;
+		while (leafX<=XPos+2) {
+			SpawnBlock(leafX, top, 0);
+			leafX = leafX+1;
+		}
+	}
+	public void SpawnCloud(){
+
+		int i = 0;
+		while (i<7) {
+			Random(400);
+			double cloudY = intRet+0.0;
+			Random(500);
+			double cloudX = intRet+1920+500-globalCloudsTimer;
+			Random(80);
+			double cloudSize = intRet+50.0;
+			Circle cloud = new Circle();
+			drawableObjects_.add(cloud);
+			cloud.setRadius(cloudSize);
+			cloud.setColor(new Color(255, 255, 255, 255));
+			cloud.moveTo(cloudX, cloudY);
+			cloudsList.add(cloud);
+			cloudsXList.add(cloudX);
+			cloudsYList.add(cloudY);
+			i = i+1;
+		}
 	}
 	public void Random(int max){
 
@@ -329,13 +430,12 @@ class DrawingCanvas extends JPanel {
 	public void Gameloop(){
 
 		AnimateSun();
+		AnimateClouds();
 		LoadTerrain();
-		if (keysPressed_.contains(70)) {
-			System.out.println("F");
-		}
+		MovePlayer();
 		MoveCamera();
 	}
-	public void MoveCamera(){
+	public void MovePlayer(){
 
 		if (keysPressed_.contains(65)) {
 			pX = pX-pSpeed;
@@ -343,16 +443,70 @@ class DrawingCanvas extends JPanel {
 		if (keysPressed_.contains(68)) {
 			pX = pX+pSpeed;
 		}
+		pVelY = pVelY+0.8;
+		if (pVelY>20.0) {
+			pVelY = 10.0;
+		}
+		pY = pY+pVelY;
+		if (keysPressed_.contains(87)&&isGrounded) {
+			pVelY = 0-15.0;
+			pY = pY-1.0;
+			isGrounded = false;
+		}
+		if (pVelY>1.0) {
+			isGrounded = false;
+		}
+		int i = 0;
+		while (i<blocksList.size()) {
+			Box block = blocksList.get(i);
+			double blockX = blocksXList.get(i);
+			double blockY = blocksYList.get(i);
+			if (pX+pSize>blockX&&pX<blockX+BlockSize&&pY+pSize>blockY&&pY<blockY+BlockSize) {
+				double overlapX = pX+pSize-blockX;
+				double overlapX2 = blockX+BlockSize-pX;
+				if (overlapX2<overlapX) {
+					overlapX = overlapX2;
+				}
+				double overlapY = pY+pSize-blockY;
+				double overlapY2 = blockY+BlockSize-pY;
+				if (overlapY2<overlapY) {
+					overlapY = overlapY2;
+				}
+				if (overlapY<=overlapX) {
+					if (pY<blockY) {
+						pY = pY-overlapY;
+						isGrounded = true;
+						pVelY = 0.0;
+					}
+					if (pY>blockY) {
+						pY = pY+overlapY;
+					}
+				}
+				if (overlapX<overlapY) {
+					if (pX<blockX) {
+						pX = pX-overlapX;
+					}
+					if (pX>blockX) {
+						pX = pX+overlapX;
+					}
+				}
+			}
+			i = i+1;
+		}
+	}
+	public void MoveCamera(){
+
 		camX = camX+(pX-camX)/camSpeed;
+		camY = camY+(pY-camY)/camSpeed;
 		int i = 0;
 		while (i<blocksList.size()) {
 			Box block = blocksList.get(i);
 			double newX = blocksXList.get(i)-camX+1920/2;
-			int newY = blocksYList.get(i);
+			double newY = blocksYList.get(i)-camY+1080/2;
 			block.moveTo(newX, newY);
 			i = i+1;
 		}
-		player.moveTo(pX-camX+1920/2, pY);
+		player.moveTo(pX-camX+1920/2, pY-camY+1080/2);
 	}
 	public void ClickSun(Circle tempSun){
 
@@ -366,7 +520,7 @@ class DrawingCanvas extends JPanel {
 	}
 	public void ClickBlock(Box tempBlock){
 
-		objectsToRemove_.add(tempBlock);
+		tempBlock.setColor(new Color(0, 0, 0, 255));
 	}
 
 
@@ -467,7 +621,7 @@ class Circle extends DrawableObject {
 		this.radius = radius;
 	}
 
-	public void setRadius(int radius) {
+	public void setRadius(double radius) {
 		this.radius = radius;
 	}
 

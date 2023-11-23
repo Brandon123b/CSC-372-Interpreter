@@ -1,7 +1,5 @@
 import javax.swing.*;
 
-import javafx.scene.input.KeyCode;
-
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -231,7 +229,7 @@ class Circle extends DrawableObject {
 		this.radius = radius;
 	}
 
-	public void setRadius(int radius) {
+	public void setRadius(double radius) {
 		this.radius = radius;
 	}
 

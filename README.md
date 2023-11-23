@@ -59,3 +59,6 @@ Test often:
 Look at the top error first:
 	The program might skip a line if an error occurs, potentially causing subsequent errors. I recommend addressing the first error first to ensure 
 	it's fixed before examining other errors. Often, resolving the initial error can automatically resolve the others.
+
+Negatives are not supported:
+	There is no support for negative numbers. This is because some reason I assume? Use 0-{number} instead of -{number}. This is a simple fix that works well.

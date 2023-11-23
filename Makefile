@@ -1,7 +1,7 @@
 SRC_DIR := src
 BIN_DIR := bin
 
-ARGS=55
+ARGS := $(shell shuf -i 1-99999999 -n 1)
 
 all: $(BIN_DIR)/Interpreter.class
 

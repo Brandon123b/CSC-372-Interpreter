@@ -20,6 +20,8 @@ Begin a function called Init with an int called _seed.
 	Call the function InitTerrain.
 
 	Call the function InitPlayer.
+
+	Call the function InitClouds.
 Leave the function.
 
 Begin a function called CreateSun.
@@ -94,11 +96,33 @@ Begin a function called InitPlayer.
 	Set global pX to 0.0.
 	Set global pY to 300.0.
 	Set global pSpeed to 15.0.
+	Set global pVelY to 0.0.
+	Set global pSize to 50.0.
+	Set global isGrounded to false.
 
 	Create a global Box called player.
-	Set the size of player to 50 and 50.
+	Set the size of player to pSize and pSize.
 	Set the color of player to (255, 0, 0, 255).
 Leave the function.
+
+# Create some moving clouds
+Begin a function called InitClouds.
+
+	# Initialize cloudsList
+	Create a Circle called cloud.
+	Add cloud to global cloudsList.
+	Add 0.0 to global cloudsXList.
+	Add 0.0 to global cloudsYList.
+	Remove cloud from the canvas.
+	Remove index 0 from cloudsList.
+	Remove index 0 from cloudsXList.
+	Remove index 0 from cloudsYList.
+
+	# Animation time
+	Set global globalCloudsTimer to 0.0.
+	Set global nextCloud to 0.0.
+Leave the function.
+
 
 # ---------------------------------------------------------------------------- #
 #                                  Animations                                  #
@@ -135,6 +159,39 @@ Begin a function called AnimateSun.
 	Exit the while.
 Leave the function.
 
+Begin a function called AnimateClouds.
+
+	Set globalCloudsTimer to globalCloudsTimer - 4.0.
+
+	# Move the clouds to the left
+	Set i to 0.
+	While i < length of cloudsList:
+		Set cloud to index i of cloudsList.
+		Set newX to index i of cloudsXList.
+		Set newY to index i of cloudsYList.
+
+		Move cloud to newX + globalCloudsTimer and newY.
+
+		# If the cloud is offscreen, then remove it
+		If newX + globalCloudsTimer < 0.0-400.0, then:
+			Remove cloud from the canvas.
+			Remove index i from cloudsList.
+			Remove index i from cloudsXList.
+			Remove index i from cloudsYList.
+			Set i to i - 1.
+		Leave the if statement.
+
+		Set i to i + 1.
+	Exit the while.
+
+	# Spawn new cloud if the last one is offscreen
+	If nextCloud >= globalCloudsTimer, then:
+		Call the function SpawnCloud.
+		Call the function Random with 1000.
+		Set nextCloud to globalCloudsTimer - intRet.
+	Leave the if statement.
+Leave the function.
+
 # ---------------------------------------------------------------------------- #
 #                                  Generation                                  #
 # ---------------------------------------------------------------------------- #
@@ -164,6 +221,12 @@ Leave the function.
 # Create a colmn of blocks at the given (x,y) choord in the grid 
 Begin a function called GenerateCol with an int called XCol and an int called height.
 
+	# Random chance to spawn a tree
+	Call the function Random with 9.
+	If intRet = 1, then:
+		Call the function SpawnTree with XCol and height - 1.
+	Leave the if statement.
+
 	# Spawn blocks until it reaches the bottom of the screen
 	Set depth to 0.
 	While height < 1080:
@@ -180,6 +243,11 @@ Begin a function called SpawnBlock with an int called XPos, an int called YPos, 
 	Create a Box called block.
 	Set the size of block to BlockSize + 1 and BlockSize + 1.	# Add 1 to prevent gaps
 	Move block to XPos * BlockSize and YPos * BlockSize.
+
+	# -1 is tree stump (brown-ish)
+	If depth = 0-1, then:
+		Set the color of block to (166, 139, 113, 255).
+	Leave the if statement.
 
 	# Top block is Green, then move from light brown to dark brown as it goes deeper
 	If depth = 0, then:
@@ -201,10 +269,74 @@ Begin a function called SpawnBlock with an int called XPos, an int called YPos, 
 	# OnClick
 	When block is clicked call ClickBlock.
 
-	# Add the block to the list
+	# Add the block to the list (as doubles)
 	Add block to global blocksList.
-	Add XPos * BlockSize to global blocksXList.
-	Add YPos * BlockSize to global blocksYList.
+	Add XPos * BlockSize + 0.0 to global blocksXList.
+	Add YPos * BlockSize + 0.0 to global blocksYList.
+Leave the function.
+
+# Spawns a tree at the given x and y position
+Begin a function called SpawnTree with an int called XPos and an int called YPos.
+
+	# Create the trunk
+	Call the function Random with 5.
+	Set intRet to intRet + 4.
+	Set i to 0.
+	While i < intRet:
+		Set branchY to YPos - i.
+		Call the function SpawnBlock with XPos, branchY, 0-1.
+		Set i to i + 1.
+	Exit the while.
+
+	# Create the leaves
+	Set top to YPos - intRet - 1.
+
+	# Create single top block
+	Call the function SpawnBlock with XPos, top, 0.
+	Set top to top + 1.
+	
+	# Create the top layer
+	Set leafX to XPos - 1.
+	While leafX <= XPos + 1:
+		Call the function SpawnBlock with leafX, top, 0.
+		Set leafX to leafX + 1.
+	Exit the while.
+
+	Set top to top + 1.
+	Set leafX to XPos - 2.
+	While leafX <= XPos + 2:
+		Call the function SpawnBlock with leafX, top, 0.
+		Set leafX to leafX + 1.
+	Exit the while.
+Leave the function.
+
+# Spawns a single cloud at the given x and y position
+Begin a function called SpawnCloud.
+
+	Set i to 0.
+	While i < 7:
+
+		# Randomize the position of the cloud
+		Call the function Random with 400.
+		Set cloudY to intRet + 0.0.
+		Call the function Random with 500.
+		Set cloudX to intRet + 1920 + 500 - globalCloudsTimer.
+		
+		# Randomize the size of the cloud
+		Call the function Random with 80.
+		Set cloudSize to intRet + 50.0.
+
+		Create a Circle called cloud.
+		Set the radius of cloud to cloudSize.
+		Set the color of cloud to (255, 255, 255, 255).
+		Move cloud to cloudX and cloudY.
+
+		Add cloud to global cloudsList.
+		Add cloudX to global cloudsXList.
+		Add cloudY to global cloudsYList.
+
+		Set i to i + 1.
+	Exit the while.
 Leave the function.
 
 # ---------------------------------------------------------------------------- #
@@ -229,18 +361,17 @@ Leave the function.
 Begin a function called Gameloop. 
 
 	Call the function AnimateSun.
+	Call the function AnimateClouds.
 	
 	# Load terrain
 	Call the function LoadTerrain.
 
-	If Get the key F, then:
-		Print "F" to the console.
-	Leave the if statement.
-
+	Call the function MovePlayer.
 	Call the function MoveCamera.
 Leave the function.
 
-Begin a function called MoveCamera.
+# Moves the player to a new position (Does not touch player position as its handled by the camera)
+Begin a function called MovePlayer.
 
 	# Move the player
 	If Get the key A, then:
@@ -250,22 +381,94 @@ Begin a function called MoveCamera.
 		Set pX to pX + pSpeed.
 	Leave the if statement.
 
+	# Gravity
+	Set pVelY to pVelY + 0.8.
+	If pVelY > 20.0, then: Set pVelY to 10.0. Leave the if statement.
+	Set pY to pY + pVelY.
+
+	# Jumping
+	If Get the key W and isGrounded, then:
+		Set pVelY to 0-15.0.
+		Set pY to pY - 1.0.
+		Set isGrounded to false.
+	Leave the if statement.
+
+	# See if the player is falling (not grounded) by vel
+	If pVelY > 1.0, then: Set isGrounded to false. Leave the if statement.
+
+	# Handle collisions with blocks (Both player and block positions are top right)
+	Set i to 0.
+	While i < length of blocksList:
+		Set block to index i of blocksList.
+		Set blockX to index i of blocksXList.
+		Set blockY to index i of blocksYList.
+
+		# If the player is inside the block, then move it out
+		If pX + pSize > blockX and pX < blockX + BlockSize and pY + pSize > blockY and pY < blockY + BlockSize, then:
+			
+			# Get the overlap
+			Set overlapX to pX + pSize - blockX.
+			Set overlapX2 to blockX + BlockSize - pX.
+			If overlapX2 < overlapX, then: Set overlapX to overlapX2. Leave the if statement.
+			
+			Set overlapY to pY + pSize - blockY.
+			Set overlapY2 to blockY + BlockSize - pY.
+			If overlapY2 < overlapY, then: Set overlapY to overlapY2. Leave the if statement.
+
+			# If overlapY is smaller than overlapX, then move the player vertically
+			If overlapY <= overlapX, then:
+				# If the player is above the block, then move it up
+				If pY < blockY, then:
+					Set pY to pY - overlapY.
+					Set isGrounded to true.
+					Set pVelY to 0.0.
+				Leave the if statement.
+
+				# If the player is below the block, then move it down
+				If pY > blockY, then:
+					Set pY to pY + overlapY.
+				Leave the if statement.
+			Leave the if statement.
+
+			# If overlapX is smaller than overlapY, then move the player horizontally
+			If overlapX < overlapY, then:
+				# If the player is to the left of the block, then move it to the left
+				If pX < blockX, then:
+					Set pX to pX - overlapX.
+				Leave the if statement.
+
+				# If the player is to the right of the block, then move it to the right
+				If pX > blockX, then:
+					Set pX to pX + overlapX.
+				Leave the if statement.
+			Leave the if statement.
+
+		Leave the if statement.
+
+		Set i to i + 1.
+	Exit the while.
+Leave the function.
+
+# Moves the camera (Moves all objects to correct position to draw them)
+Begin a function called MoveCamera.
+
 	# Move the camera towards the player
 	Set camX to camX + (pX - camX) / camSpeed.
+	Set camY to camY + (pY - camY) / camSpeed.
 
 	# Set the new position of all blocks
 	Set i to 0.
 	While i < length of blocksList:
 		Set block to index i of blocksList.
 		Set newX to index i of blocksXList - camX + 1920/2.
-		Set newY to index i of blocksYList.
+		Set newY to index i of blocksYList - camY + 1080/2.
 		Move block to newX and newY.
 
 		Set i to i + 1.
 	Exit the while.
 
 	# Move the player (with respect to the camera)
-	Move player to pX - camX + 1920/2 and pY.
+	Move player to pX - camX + 1920/2 and pY - camY + 1080/2.
 Leave the function.
 
 # ---------------------------------------------------------------------------- #
@@ -287,8 +490,9 @@ Begin a function called ClickSun with a Circle called tempSun.
 	Exit the while.
 Leave the function.
 
+# When a block is clicked, change its color
 Begin a function called ClickBlock with a Box called tempBlock.
 
-	# If the block is clicked, kill it
-	Remove tempBlock from the canvas.
+	# Set the color of the block to black
+	Set the color of tempBlock to (0, 0, 0, 255).
 Leave the function.
