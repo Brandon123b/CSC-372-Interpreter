@@ -1,4 +1,8 @@
 
+/* hi1 */
+/* hi2 */
+/* hi3 */
+
 Begin a function called Init.
 
 	# Create a background (static color)

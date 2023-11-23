@@ -1,3 +1,10 @@
+
+/* hi1 */
+/* hi2 */
+/* hi3 */
+
+# Comments
+
 Begin a function called Fun. 
 	Set global test to 1+2=3+4.
 	Set hello to "hello world!".
