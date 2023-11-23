@@ -1,7 +1,7 @@
 
-/* hi1 */
-/* hi2 */
-/* hi3 */
+# ---------------------------------------------------------------------------- #
+#                                     Init                                     #
+# ---------------------------------------------------------------------------- #
 
 Begin a function called Init.
 
@@ -59,6 +59,10 @@ Begin a function called CreateSun.
 	Set global sunLineY to 1.0.
 Leave the function.
 
+# ---------------------------------------------------------------------------- #
+#                                  Animations                                  #
+# ---------------------------------------------------------------------------- #
+
 Begin a function called AnimateSun.
 
 	# Animate the sun lines
@@ -90,10 +94,18 @@ Begin a function called AnimateSun.
 	Exit the while.
 Leave the function.
 
+# ---------------------------------------------------------------------------- #
+#                                   Gameloop                                   #
+# ---------------------------------------------------------------------------- #
+
 Begin a function called Gameloop. 
 
 	Call the function AnimateSun.
 Leave the function.
+
+# ---------------------------------------------------------------------------- #
+#                                Events (clicks)                               #
+# ---------------------------------------------------------------------------- #
 
 Begin a function called ClickSun with a Circle called tempSun.
 

@@ -204,7 +204,7 @@ public class Interpreter {
 	public static List<Function> splitIntoFunctions(String input) {
         List<Function> functions = new ArrayList<>();
 
-		Pattern pattern = Pattern.compile("(\\s*|/\\*.*?\\*/|#.*)*Begin a function called ([a-zA-Z0-9]+) ?(that returns an? [^\b.]+)? ?([^.]+)?\\.(.*?)(Leave the function\\.)(\\s*)", Pattern.DOTALL);
+		Pattern pattern = Pattern.compile("(\\s*|/\\*.*?\\*/|#.*?\n)*Begin a function called ([a-zA-Z0-9]+) ?(that returns an? [^\b.]+)? ?([^.]+)?\\.(.*?)(Leave the function\\.)(\\s*)", Pattern.DOTALL);
         Matcher matcher = pattern.matcher(input);
 
         int lastIndex = 0;
@@ -213,6 +213,12 @@ public class Interpreter {
         while (matcher.find()) {
             start = matcher.start();
             end = matcher.end();
+
+			System.out.println("Group 1");
+			System.out.println(matcher.group(1));
+			System.out.println("Group 2");
+			System.out.println(matcher.group(2));
+			System.out.println("End");
             
             // Check for text before the function call
             if (start > lastIndex) {

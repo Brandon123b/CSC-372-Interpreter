@@ -27,7 +27,7 @@ public class Test1 {
 			System.exit(1);
 		}
 		try {
-			canvas.Fun2();
+			canvas.Fun();
 		} catch (Exception e) {
 			System.err.println("Invalid arguments specified!");
 			System.exit(1);
@@ -118,7 +118,7 @@ class DrawingCanvas extends JPanel {
 	/*                            Interpreted Functions                           */
 	/* -------------------------------------------------------------------------- */
 
-	public void Fun2(){
+	public void Fun(){
 
 		test = 1+2==3+4;
 		String hello = "hello world!";
