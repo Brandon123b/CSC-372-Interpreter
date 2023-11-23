@@ -277,7 +277,7 @@ class Circle extends DrawableObject {
 		this.radius = radius;
 	}
 
-	public void setRadius(int radius) {
+	public void setRadius(double radius) {
 		this.radius = radius;
 	}
 

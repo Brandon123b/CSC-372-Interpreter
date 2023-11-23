@@ -1,7 +1,8 @@
 SRC_DIR := src
 BIN_DIR := bin
 
-ARGS := $(shell shuf -i 1-99999999 -n 1)
+# Oprional: add args for "make run" (e.g. ARGS := 1 2 3)
+ARGS := 
 
 all: $(BIN_DIR)/Interpreter.class
 
@@ -21,6 +22,10 @@ $(BIN_DIR)/%.class: $(SRC_DIR)/%.java
 # Run the interpreter on the given file, then run it
 %: all %.class
 	java -cp $(BIN_DIR) $(notdir $@) $(ARGS)
+
+# Shortcut for running World.mpl (random seed)
+World: all ExamplePrograms/World.class
+	java -cp $(BIN_DIR) World $(shell shuf -i 1-99999999 -n 1)
 
 clean:
 	rm -rf $(BIN_DIR)/*

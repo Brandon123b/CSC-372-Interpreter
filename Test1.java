@@ -1,7 +1,5 @@
 import javax.swing.*;
 
-import javafx.scene.input.KeyCode;
-
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -92,13 +90,13 @@ class DrawingCanvas extends JPanel {
 					keysPressed_.add(evt.getKeyCode());
 				}
 
-				System.out.println("Pressed " + evt.getKeyCode() + "	" + evt.getKeyChar() + "	" + evt.getKeyLocation());
+				// System.out.println("Pressed " + evt.getKeyCode() + "	" + evt.getKeyChar() + "	" + evt.getKeyLocation());
 			}
 
 			public void keyReleased(java.awt.event.KeyEvent evt) {
 				keysPressed_.remove((Object) evt.getKeyCode());
 
-				System.out.println("Released " + evt.getKeyCode() + "	" + evt.getKeyChar() + "	" + evt.getKeyLocation());
+				// System.out.println("Released " + evt.getKeyCode() + "	" + evt.getKeyChar() + "	" + evt.getKeyLocation());
 			}
 		});
 	}
@@ -148,6 +146,9 @@ class DrawingCanvas extends JPanel {
 		String hello = "hello world!";
 		int yay = 5+10*37+(32+3);
 		boolean hi = keysPressed_.contains(70);
+		double test1 = 0.0;
+		test1 = 1+0.0;
+		System.out.println(test1);
 	}
 
 
@@ -248,7 +249,7 @@ class Circle extends DrawableObject {
 		this.radius = radius;
 	}
 
-	public void setRadius(int radius) {
+	public void setRadius(double radius) {
 		this.radius = radius;
 	}
 

@@ -15,4 +15,9 @@ Begin a function called Fun.
 	Set yay to 5+10*37+(32+3).
 
 	Set hi to Get the key F.
+
+	Set test1 to 0.0.
+	Set test1 to 1 + 0.0.
+
+	Print test1 to the console.
 Leave the function.
