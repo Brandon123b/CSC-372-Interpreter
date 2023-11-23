@@ -20,7 +20,7 @@ Expr:
 	Lets more or less copy javas expresions.
 
 Conditional:
-	if <expr> is <expr>, then: <CompoundStmt> Leave the if statement.
+	if <expr>, then: <CompoundStmt> Leave the if statement.
 		Ex: "if 4+8 is 9+3 then: Set an interger called hi to 9. Leave the if statement."
 
 Loops:
