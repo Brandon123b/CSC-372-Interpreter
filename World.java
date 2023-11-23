@@ -22,12 +22,12 @@ public class World {
 		frame.add(canvas);
 		frame.setVisible(true);
 
-		if(args.length != 0) {
+		if(args.length != 1) {
 			System.err.println("Invalid number of arguments specified!");
 			System.exit(1);
 		}
 		try {
-			canvas.Init();
+			canvas.Init(Integer.parseInt(args[0]));
 		} catch (Exception e) {
 			System.err.println("Invalid arguments specified!");
 			System.exit(1);
@@ -112,6 +112,7 @@ class DrawingCanvas extends JPanel {
 	/* -------------------------------------------------------------------------- */
 
 	int sunLinesLength;
+	int seed;
 	double cos1;
 	int sunLineSize;
 	double cos15;
@@ -119,6 +120,9 @@ class DrawingCanvas extends JPanel {
 	double sunLineY;
 	Circle sun;
 	double sunLineX;
+	int NextRightBlock;
+	int NextRightBlockHeight;
+	List<Box> blocksList = new ArrayList<>();
 	Box backGround;
 	int sunLinesCount;
 	int sunLinesGap;
@@ -127,20 +131,24 @@ class DrawingCanvas extends JPanel {
 	int sunPosx;
 	double sin15;
 	List<Line> sunLinesList = new ArrayList<>();
+	int BlockSize;
 
 
 	/* -------------------------------------------------------------------------- */
 	/*                            Interpreted Functions                           */
 	/* -------------------------------------------------------------------------- */
 
-	public void Init(){
+	public void Init(int _seed){
 
+		System.out.println(_seed);
+		seed = _seed;
 		backGround = new Box();
 		drawableObjects_.add(backGround);
 		backGround.moveTo(0, 0);
 		backGround.setSize(1920, 1080);
 		backGround.setColor(new Color(135, 206, 250, 255));
 		CreateSun();
+		InitTerrain();
 	}
 	public void CreateSun(){
 
@@ -173,6 +181,12 @@ class DrawingCanvas extends JPanel {
 		sunLineX = 0.0;
 		sunLineY = 1.0;
 	}
+	public void InitTerrain(){
+
+		BlockSize = 50;
+		NextRightBlock = 0;
+		NextRightBlockHeight = 1080/BlockSize/2;
+	}
 	public void AnimateSun(){
 
 		sunLineX = sunLineX*cos1-sunLineY*sin1;
@@ -195,9 +209,57 @@ class DrawingCanvas extends JPanel {
 			index = index+1;
 		}
 	}
+	public void LoadTerrain(){
+
+		if (NextRightBlock*BlockSize<1920) {
+			GenerateCol(NextRightBlock, 1050/BlockSize/2);
+			NextRightBlock = NextRightBlock+1;
+			void offset = Random(3);
+			NextRightBlockHeight = NextRightBlockHeight+1;
+		}
+	}
+	public void GenerateCol(int XCol, int height){
+
+		int depth = 0;
+		while (height<1080) {
+			SpawnBlock(XCol, height, depth);
+			height = height+1;
+			depth = depth+1;
+		}
+	}
+	public void SpawnBlock(int XPos, int YPos, int depth){
+
+		Box block = new Box();
+		drawableObjects_.add(block);
+		block.setSize(BlockSize+1, BlockSize+1);
+		block.moveTo(XPos*BlockSize, YPos*BlockSize);
+		if (depth==0) {
+			block.setColor(new Color(0, 200, 0, 255));
+		}
+		if (depth==1) {
+			block.setColor(new Color(166, 139, 113, 255));
+		}
+		if (depth==2) {
+			block.setColor(new Color(136, 103, 78, 255));
+		}
+		if (depth==3) {
+			block.setColor(new Color(102, 65, 33, 255));
+		}
+		if (depth>=4) {
+			block.setColor(new Color(84, 45, 28, 255));
+		}
+		block.setOnClick(obj -> ClickBlock((Box)obj));
+		blocksList.add(block);
+	}
+	public int Random(int max){
+
+		seed = seed*1103515245+12345;
+		return seed%max;
+	}
 	public void Gameloop(){
 
 		AnimateSun();
+		LoadTerrain();
 	}
 	public void ClickSun(Circle tempSun){
 
@@ -208,6 +270,10 @@ class DrawingCanvas extends JPanel {
 			sunLine.setColor(new Color(255, 0, 0, 255));
 			index = index+1;
 		}
+	}
+	public void ClickBlock(Box tempBlock){
+
+		objectsToRemove_.add(tempBlock);
 	}
 
 
@@ -224,14 +290,14 @@ abstract class DrawableObject {
 	private Consumer<DrawableObject> onClicked = input -> {
 	}; // Default empty lambda
 
-	public DrawableObject(int x, int y, Color color) {
+	public DrawableObject(double x, double y, Color color) {
 		this.x = x;
 		this.y = y;
 		this.color = color;
 	}
 
 	// Moves the object to the specified position
-	public void moveTo(int x, int y) {
+	public void moveTo(double x, double y) {
 		this.x = x;
 		this.y = y;
 	}
@@ -255,7 +321,7 @@ abstract class DrawableObject {
 	public abstract void draw(Graphics g);
 
 	// Used for checking if a point is inside the object (for mouse clicks)
-	public abstract boolean contains(int x, int y);
+	public abstract boolean contains(double x, double y);
 }
 
 class Box extends DrawableObject {
@@ -267,13 +333,13 @@ class Box extends DrawableObject {
 		this.height = 100;
 	}
 
-	public Box(int x, int y, int width, int height, Color color) {
+	public Box(double x, double y, double width, double height, Color color) {
 		super(x, y, color);
 		this.width = width;
 		this.height = height;
 	}
 
-	public void setSize(int width, int height) {
+	public void setSize(double width, double height) {
 		this.width = width;
 		this.height = height;
 	}
@@ -290,7 +356,7 @@ class Box extends DrawableObject {
 	}
 
 	@Override
-	public boolean contains(int x, int y) {
+	public boolean contains(double x, double y) {
 		return x >= this.x && x <= this.x + width && y >= this.y && y <= this.y + height;
 	}
 }
@@ -324,7 +390,7 @@ class Circle extends DrawableObject {
 	}
 
 	@Override
-	public boolean contains(int x, int y) {
+	public boolean contains(double x, double y) {
 		double dx = this.x - x;
 		double dy = this.y - y;
 		return dx * dx + dy * dy <= radius * radius;
@@ -376,7 +442,7 @@ class Line extends DrawableObject {
 	}
 
 	@Override
-	public boolean contains(int x, int y) {
+	public boolean contains(double x, double y) {
 		return false; // Lines are not clickable (yet?)
 	}
 }
@@ -390,7 +456,7 @@ class Text extends DrawableObject {
 		this.text = "";
 	}
 
-	public Text(int x, int y, String text, Color color) {
+	public Text(double x, double y, String text, Color color) {
 		super(x, y, color);
 		this.text = text;
 	}
@@ -423,7 +489,7 @@ class Text extends DrawableObject {
 	}
 
 	@Override
-	public boolean contains(int x, int y) {
+	public boolean contains(double x, double y) {
 		// Text objects are not clickable, so always return false
 		return false;
 	}

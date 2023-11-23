@@ -3,7 +3,10 @@
 #                                     Init                                     #
 # ---------------------------------------------------------------------------- #
 
-Begin a function called Init.
+Begin a function called Init with an int called _seed.
+
+	Print _seed to the console.
+	Set global seed to _seed.
 
 	# Create a background (static color)
 	Create a global Box called backGround.
@@ -13,6 +16,8 @@ Begin a function called Init.
 
 	# Create a sun
 	Call the function CreateSun.
+
+	Call the function InitTerrain.
 Leave the function.
 
 Begin a function called CreateSun.
@@ -59,6 +64,16 @@ Begin a function called CreateSun.
 	Set global sunLineY to 1.0.
 Leave the function.
 
+Begin a function called InitTerrain.
+
+	# Globals
+	Set global BlockSize to 50.
+
+	# The next block to load when visible
+	Set global NextRightBlock to 0.
+	Set global NextRightBlockHeight to 1080/BlockSize/2.
+Leave the function.
+
 # ---------------------------------------------------------------------------- #
 #                                  Animations                                  #
 # ---------------------------------------------------------------------------- #
@@ -95,12 +110,88 @@ Begin a function called AnimateSun.
 Leave the function.
 
 # ---------------------------------------------------------------------------- #
+#                                  Generation                                  #
+# ---------------------------------------------------------------------------- #
+
+# If a new part is onscreen, then load a new colmn of blocks
+Begin a function called LoadTerrain.
+
+	# Load a block if it is visible
+	If NextRightBlock * BlockSize < 1920, then:
+		Call the function GenerateCol with NextRightBlock and 1050/BlockSize/2.
+		Set NextRightBlock to NextRightBlock + 1.
+		Set offset to 0.
+		Set offset to Call the function Random with 3.
+		Set NextRightBlockHeight to NextRightBlockHeight + 1.
+	Leave the if statement.
+Leave the function.
+
+# Create a colmn of blocks at the given (x,y) choord in the grid 
+Begin a function called GenerateCol with an int called XCol and an int called height.
+
+	# Spawn blocks until it reaches the bottom of the screen
+	Set depth to 0.
+	While height < 1080:
+		Call the function SpawnBlock with XCol, height, depth.
+		Set height to height + 1.
+		Set depth to depth + 1.
+	Exit the while.
+Leave the function.
+
+# Spawns a single block	at the given x and y position (Depth is the amount of blocks above it)
+Begin a function called SpawnBlock with an int called XPos, an int called YPos, and an int called depth.
+
+	# Create a block
+	Create a Box called block.
+	Set the size of block to BlockSize + 1 and BlockSize + 1.	# Add 1 to prevent gaps
+	Move block to XPos * BlockSize and YPos * BlockSize.
+
+	# Top block is Green, then move from light brown to dark brown as it goes deeper
+	If depth = 0, then:
+		Set the color of block to (0, 200, 0, 255).
+	Leave the if statement.
+	If depth = 1, then:
+		Set the color of block to (166, 139, 113, 255).
+	Leave the if statement.
+	If depth = 2, then:
+		Set the color of block to (136, 103, 78, 255).
+	Leave the if statement.
+	If depth = 3, then:
+		Set the color of block to (102, 65, 33, 255).
+	Leave the if statement.
+	If depth >= 4, then:
+		Set the color of block to (84, 45, 28, 255).
+	Leave the if statement.
+
+	# OnClick
+	When block is clicked call ClickBlock.
+
+	# Add the block to the list
+	Add block to global blocksList.
+Leave the function.
+
+# ---------------------------------------------------------------------------- #
+#                                     Utils                                    #
+# ---------------------------------------------------------------------------- #
+
+# Returns a random number below the given max
+Begin a function called Random with an int called max.
+
+	# Simple, but effective random number generator
+	Set seed to seed * 1103515245 + 12345.
+	Return seed % max to the caller.
+Leave the function.
+
+# ---------------------------------------------------------------------------- #
 #                                   Gameloop                                   #
 # ---------------------------------------------------------------------------- #
 
 Begin a function called Gameloop. 
 
 	Call the function AnimateSun.
+	
+	# Load terrain
+	Call the function LoadTerrain.
 Leave the function.
 
 # ---------------------------------------------------------------------------- #
@@ -120,4 +211,10 @@ Begin a function called ClickSun with a Circle called tempSun.
 
 		Set index to index + 1.
 	Exit the while.
+Leave the function.
+
+Begin a function called ClickBlock with a Box called tempBlock.
+
+	# If the block is clicked, kill it
+	Remove tempBlock from the canvas.
 Leave the function.

@@ -1,6 +1,8 @@
 SRC_DIR := src
 BIN_DIR := bin
 
+ARGS=50
+
 all: $(BIN_DIR)/Interpreter.class
 
 # Compile the given class file (in bin)
@@ -18,7 +20,7 @@ $(BIN_DIR)/%.class: $(SRC_DIR)/%.java
 
 # Run the interpreter on the given file, then run it
 %: all %.class
-	java -cp $(BIN_DIR) $(notdir $@)
+	java -cp $(BIN_DIR) $(notdir $@) $(ARGS)
 
 clean:
 	rm -rf $(BIN_DIR)/*

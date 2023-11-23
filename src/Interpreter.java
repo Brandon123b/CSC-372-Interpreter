@@ -1343,7 +1343,7 @@ public class Interpreter {
 		}
 
 		// Remove the GUI object
-		return indent + "drawableObjects_.remove(" + name + ");\n";
+		return indent + "objectsToRemove_.add(" + name + ");\n";
 	
 	}
 

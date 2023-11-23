@@ -24,14 +24,14 @@ Conditional:
 		Ex: "if 4+8 is 9+3 then: Set an interger called hi to 9. Leave the if statement."
 
 Loops:
-	While <expr> is true: <CompoundStmt> Exit the while.
-		Ex: "While hi > 0 is true: Set an integer called hi to hi - 1. Exit the while."
+	While <expr>: <CompoundStmt> Exit the while.
+		Ex: "While hi > 0: Set an integer called hi to hi - 1. Exit the while."
 	
 Console:
 	Print <expr> to the console.
 
 Function:
-	Begin a function called <var> [with type <type> called <Var> [{, type <type> <Var>} and type <type> called <Var] ].			# First function is main()
+	Begin a function called <var> [with a type <type> called <Var> [{, a type <type> <Var>} and a type <type> called <Var] ].			# First function is main() ("a" can also be "an")
 	Call the function <function>  [with <Var> [{, <Var>} and <Var] ].
 	Return <Var> to the caller.
 	Leave the function.
