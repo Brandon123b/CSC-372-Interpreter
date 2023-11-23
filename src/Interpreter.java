@@ -213,12 +213,6 @@ public class Interpreter {
         while (matcher.find()) {
             start = matcher.start();
             end = matcher.end();
-
-			System.out.println("Group 1");
-			System.out.println(matcher.group(1));
-			System.out.println("Group 2");
-			System.out.println(matcher.group(2));
-			System.out.println("End");
             
             // Check for text before the function call
             if (start > lastIndex) {
