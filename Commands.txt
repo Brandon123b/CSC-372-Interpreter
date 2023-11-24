@@ -5,23 +5,25 @@ General Idea:
 	3. Start at first function (All code is inside a function to make things easy) (First function gets command args)
 
 Built in types:
-	int, double, string, bool
+	int, double, string, bool, Box, Circle, Line, Text, List<type> 		#(no lists of lists)
 
-Variables (Auto typeing/declaring?):
+Variables (Auto typeing and declaring):
 	Set <Var> to <expr>.				# Will create the var if it does not exist, or find it if it does (Also consider var to var)
-	Set global <Var> to <expr>.			# Globals are accessed anywhere (Top of file)
+	Set global <Var> to <expr>.			# Globals are accessed anywhere (Think top of file in java)
 		Ex: "Set Pie to 5+8."
+		Ex: "Set Pie to Pie + 1."
+		Ex: "Set global Var1 to "Hello World"."	
 
 Comments:
 	# This is a line Comment
 	/* Multiline comment */ 
 	
 Expr:
-	Lets more or less copy javas expresions.
+	Lets more or less copy javas expresions. (+ - * / % and or not = != < > <= >=)
 
 Conditional:
 	if <expr>, then: <CompoundStmt> Leave the if statement.
-		Ex: "if 4+8 is 9+3 then: Set an interger called hi to 9. Leave the if statement."
+		Ex: "if 4+8 = 9+3 then: Set an interger called hi to 9. Leave the if statement."
 
 Loops:
 	While <expr>: <CompoundStmt> Exit the while.
@@ -29,14 +31,15 @@ Loops:
 	
 Console:
 	Print <expr> to the console.
+		Ex: "Print "Hello World" to the console."
 
 Function:
 	Begin a function called <var> [with a type <type> called <Var> [{, a type <type> <Var>} and a type <type> called <Var] ].			# First function is main() ("a" can also be "an")
 	Call the function <function>  [with <Var> [{, <Var>} and <Var] ].
 	Return <Var> to the caller.
 	Leave the function.
-	Ex: "Begin a function called Fib with type int called N.
-	Ex: "Begin a function called Foo with type int called Pie, type bool called Hello, and type string called Str.
+		Ex: "Begin a function called Fib with type int called N.
+		Ex: "Begin a function called Foo with type int called Pie, type bool called Hello, and type string called Str.
 
 Lists:
 	(Lists also use implied types, no need to declare them, just add a value to a list and it will be created)
@@ -45,15 +48,16 @@ Lists:
 	Remove index <int> from <Var>.
 	index <int> of <list>				(In an expression)
 	length of <list>					(In an expression)
-	Ex: "Add 5 to MyList."
-	Ex: "Remove 5 from MyList."
-	Ex: "Remove index 2 from MyList."
-	Ex: "Set myVar to index 2 of MyList."
-	Ex: "Set myVar to index 2 of MyList + 2 / 7."
-	Ex: "Set myVar to length of MyList."
-	Ex: "Set myVar to length of MyList + 2 / 7."
+		Ex: "Add 5 to MyList."
+		Ex: "Remove 5 from MyList."
+		Ex: "Remove index 2 from MyList."
+		Ex: "Set myVar to index 2 of MyList."
+		Ex: "Set myVar to index 2 of MyList + 2 / 7."
+		Ex: "Set myVar to length of MyList."
+		Ex: "Set myVar to length of MyList + 2 / 7."
 
 GUI:
+	(Good examples in ExamplePrograms/TestGUI.mpl)
 	Create a [global] <GUI Object> called <Var>.	# Same for Circle, line, and text
 	Move <Var> to <expr> and <expr>.				# x and y pos
 	Remove <var> from the canvas.					# All GUI objects are auto added. This is to remove them.
@@ -61,7 +65,8 @@ GUI:
 
 	# The function can have no parameters
 	# Or it can have one parameter of the correct GUI type
-	When <Var> is clicked, call <function>.			
+	When <Var> is clicked, call <function>.		\
+		Ex: "When MyCircle is clicked, call MyFunction."	# Myfunction must have no parameters, or a single circle parameter	
 
 	// Circle
 	Set the radius of Circle <Var> to <expr>		# Radius
@@ -77,10 +82,10 @@ GUI:
 	Set the text of <Var> to <expr>.				# Text
 	Set the size of <Var> to <expr>.				# Font size
 
-	// key (Key is a string of the given key. Look at KeyList.txt for a list of keys) (Only useful in gameloop)
+	// key (Key is a string of the given key (no quotes). Look at KeyList.txt for a list of keys) 
 	Get the key <key>.								# In an expression
-	Ex: "Set isPressed to Get the key A."
-	Ex: "If Get the key A, then: Print "A" to the console. Leave the if statement."
+		Ex: "Set isPressed to Get the key A."
+		Ex: "If Get the key A, then: Print "A" to the console. Leave the if statement."
 	
 
 	Built in function "Gameloop" that is automatically called every frame (50fps?)

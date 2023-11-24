@@ -81,3 +81,19 @@ Look at the top error first:
 
 Negatives are not supported:
 	There is no support for negative numbers. This is because some reason I assume? Use 0-{number} instead of -{number}. This is a simple fix that works well.
+
+# ---------------------------------------------------------------------------- #
+#                                Sample Programs                               #
+# ---------------------------------------------------------------------------- #
+
+Example Programs:
+	There are many sample programs in the ExamplePrograms directory. I reccomend looking at them to see how the language works. They are also fun to play with.
+	Run them with "make ExamplePrograms/{filename}". Programs with command line args cannot be directly ran with make. You must add the args to the makefile if you want.
+	Any program that begins with "Test" is a test program. These are programs that I used to test the language. They are not very interesting, but they are good examples
+	of how the language works. The other programs are more interesting and are worth looking over, at the cost of being more complicated to understand. 
+
+Error Programs:
+	There are also some error programs in the ExampleProgramsError directory. These are programs that are designed to cause errors. They can be compiled using
+	"make ExampleProgramsError/{filename}.comp". When a statement has an error the line will be skipped. This means that a program with errors can still be ran, 
+	but it will not work as intended. These are not all the possible errors, just a few important ones. All error files have simple explanations at the top.
+	

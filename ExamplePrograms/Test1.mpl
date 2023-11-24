@@ -14,6 +14,7 @@ Begin a function called Fun.
 	Set hello to "hello world!".
 	Set yay to 5+10*37+(32+3).
 
+	# Probably wont work outside of gameloop.
 	Set hi to Get the key F.
 
 	Set test1 to 0.0.
