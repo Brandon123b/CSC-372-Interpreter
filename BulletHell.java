@@ -140,14 +140,15 @@ class DrawingCanvas extends JPanel {
 		double pSize;
 	int intRet;
 	int seed;
-	List<Integer> bulletXVelList = new ArrayList<>();
+	List<Double> bulletXVelList = new ArrayList<>();
 	Box hpBar;
-	List<Integer> bulletYVelList = new ArrayList<>();
+	List<Double> bulletYVelList = new ArrayList<>();
 	List<Box> platformsList = new ArrayList<>();
 	List<Double> platformXPos = new ArrayList<>();
 	int hp;
 	double bulletRadius;
 	int attackCooldown;
+	int bulletAttackCooldown;
 	double pSpeed;
 	List<Circle> bulletsList = new ArrayList<>();
 	boolean isGrounded;
@@ -160,11 +161,13 @@ class DrawingCanvas extends JPanel {
 	double pX;
 	List<Double> platformYPos = new ArrayList<>();
 	double pY;
-	List<Integer> bulletYPosList = new ArrayList<>();
+	List<Double> bulletYPosList = new ArrayList<>();
+	int bulletAttackCount;
 	boolean isAlive;
 	List<Double> platformYSizes = new ArrayList<>();
-	List<Integer> bulletXPosList = new ArrayList<>();
+	List<Double> bulletXPosList = new ArrayList<>();
 	Box backGround;
+	Text gameText;
 	double pVelY;
 
 
@@ -178,6 +181,8 @@ class DrawingCanvas extends JPanel {
 		seed = _seed;
 		intRet = 0;
 		attackCooldown = 0;
+		bulletAttackCount = 0;
+		bulletAttackCooldown = 0;
 		LoadMenu();
 	}
 	public void LoadMenu(){
@@ -207,7 +212,12 @@ class DrawingCanvas extends JPanel {
 		startButtonText.setSize(100);
 		startButtonText.setColor(new Color(0, 0, 0, 255));
 		startButtonText.setText("Start");
-		OnStart();
+		gameText = new Text();
+		drawableObjects_.add(gameText);
+		gameText.moveTo(10, 1060);
+		gameText.setSize(30);
+		gameText.setColor(new Color(255, 255, 255, 255));
+		gameText.setText("Use WASD for movement and jumping, Avoid the bullets! There is no bullet collision in midair!");
 	}
 	public void OnStart(){
 
@@ -243,7 +253,6 @@ class DrawingCanvas extends JPanel {
 		isAlive = true;
 		SpawnPlatforms();
 		InitPlayer();
-		CreateBullet(100, 100, 10, 10);
 	}
 	public void SpawnPlatforms(){
 
@@ -288,11 +297,26 @@ class DrawingCanvas extends JPanel {
 	public void AttackManager(){
 
 		attackCooldown = attackCooldown-1;
+		System.out.println(bulletAttackCount);
+		if (bulletAttackCount>0) {
+			bulletAttackCooldown = bulletAttackCooldown-1;
+			if (bulletAttackCooldown<=0) {
+				CreateBulletToPlayer();
+				bulletAttackCount = bulletAttackCount-1;
+				bulletAttackCooldown = 4;
+			}
+		}
 		if (attackCooldown<=0) {
-			Random(1);
-			if (intRet==0) {
+			Random(2);
+			int attackType = intRet;
+			if (attackType==0) {
 				CreateVerticalLine();
-				attackCooldown = 60;
+				attackCooldown = 30;
+			}
+			if (attackType==1) {
+				Random(12);
+				bulletAttackCount = bulletAttackCount+intRet;
+				attackCooldown = 15;
 			}
 		}
 	}
@@ -313,7 +337,17 @@ class DrawingCanvas extends JPanel {
 			i = i+1;
 		}
 	}
-	public void CreateBullet(int posX, int posY, int velX, int velY){
+	public void CreateBulletToPlayer(){
+
+		Random(1920);
+		int bulletX = intRet;
+		int bulletY = 0-10;
+		double bulletVelX = (pX-bulletX)/100;
+		double bulletVelY = (pY-bulletY)/100;
+		CreateBullet(bulletX, bulletY, bulletVelX, bulletVelY);
+		System.out.println("Buller Spawned");
+	}
+	public void CreateBullet(double posX, double posY, double velX, double velY){
 
 		bulletRadius = 10.0;
 		Circle bullet = new Circle();
@@ -433,10 +467,10 @@ class DrawingCanvas extends JPanel {
 		int i = 0;
 		while (i<bulletsList.size()) {
 			Circle bullet = bulletsList.get(0);
-			int bulletX = bulletXPosList.get(0);
-			int bulletY = bulletYPosList.get(0);
-			int bulletVelX = bulletXVelList.get(0);
-			int bulletVelY = bulletYVelList.get(0);
+			double bulletX = bulletXPosList.get(0);
+			double bulletY = bulletYPosList.get(0);
+			double bulletVelX = bulletXVelList.get(0);
+			double bulletVelY = bulletYVelList.get(0);
 			bulletsList.remove(0);
 			bulletXPosList.remove(0);
 			bulletYPosList.remove(0);

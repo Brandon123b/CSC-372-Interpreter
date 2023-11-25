@@ -10,6 +10,8 @@ Begin a function called Main with an int called _seed.
 	Set global intRet to 0.
 
 	Set global attackCooldown to 0.
+	Set global bulletAttackCount to 0.
+	Set global bulletAttackCooldown to 0.
 
 	# Create a start menu
 	Call the function LoadMenu.
@@ -49,7 +51,12 @@ Begin a function called LoadMenu.
 	Set the color of startButtonText to (0, 0, 0, 255).
 	Set the text of startButtonText to "Start".
 
-	Call the function OnStart.
+	# Create some text to explain the game
+	Create a global Text called gameText.
+	Move gameText to 10 and 1060.
+	Set the size of gameText to 30.
+	Set the color of gameText to (255, 255, 255, 255).
+	Set the text of gameText to "Use WASD for movement and jumping, Avoid the bullets! There is no bullet collision in midair!".
 Leave the function.
 
 # Removes the start menu and starts the game.
@@ -106,8 +113,6 @@ Begin a function called StartGame.
 	Call the function SpawnPlatforms.
 
 	Call the function InitPlayer.
-
-	Call the function CreateBullet with 100, 100, 10, 10.
 Leave the function.
 
 # Spawn the platforms
@@ -167,16 +172,39 @@ Leave the function.
 # Manages when to Attacks
 Begin a function called AttackManager.
 
-	Set global attackCooldown to attackCooldown - 1.
+	Set global attackCooldown to attackCooldown - 1.		# Cooldown for new attacks
 
+	# If there are more bullets waiting to be fired, then fire them
+	If bulletAttackCount > 0, then:
+		Set bulletAttackCooldown to bulletAttackCooldown - 1.
+
+		# Don't fire too fast
+		If bulletAttackCooldown <= 0, then:
+			Call the function CreateBulletToPlayer.
+			Set bulletAttackCount to bulletAttackCount - 1.
+
+			Set bulletAttackCooldown to 4.
+		Leave the if statement.
+	Leave the if statement.
+
+	# Attack if the cooldown is over
 	If attackCooldown <= 0, then:
 
 		# Pick a random attack
-		Call the function Random with 1.
+		Call the function Random with 2.
+		Set attackType to intRet.
 
-		If intRet = 0, then:
+		# Create a vertical line of bullets
+		If attackType = 0, then:
 			Call the function CreateVerticalLine.
-			Set attackCooldown to 60.
+			Set attackCooldown to 30.
+		Leave the if statement.
+
+		# Load up bullets to be fired from the top of the screen
+		If attackType = 1, then:
+			Call the function Random with 12.
+			Set bulletAttackCount to bulletAttackCount + intRet.
+			Set attackCooldown to 15.
 		Leave the if statement.
 
 	Leave the if statement.
@@ -205,7 +233,22 @@ Begin a function called CreateVerticalLine.
 		Call the function CreateBullet with posX, posY, velX, 0.
 		Set i to i + 1.
 	Exit the while.
+Leave the function.
 
+# Spawn a bullet from the top of the screen to the player
+Begin a function called CreateBulletToPlayer.
+
+	# Get the bullet start position
+	Call the function Random with 1920.
+	Set bulletX to intRet.
+	Set bulletY to 0-10.
+
+	# Get the bullet velocity
+	Set bulletVelX to (pX - bulletX) / 100.
+	Set bulletVelY to (pY - bulletY) / 100.
+
+	# Create the bullet
+	Call the function CreateBullet with bulletX, bulletY, bulletVelX, bulletVelY.
 Leave the function.
 
 # ---------------------------------------------------------------------------- #
@@ -213,7 +256,7 @@ Leave the function.
 # ---------------------------------------------------------------------------- #
 
 # Creates a bullet
-Begin a function called CreateBullet with an int called posX, an int called posY, an int called velX, an int called velY.
+Begin a function called CreateBullet with an double called posX, an double called posY, an double called velX, an double called velY.
 
 	# Statics
 	Set global bulletRadius to 10.0.
