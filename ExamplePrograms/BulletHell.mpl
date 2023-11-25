@@ -349,10 +349,21 @@ Begin a function called MovePlayer.
 
 	# Jumping
 	If Get the key W and isGrounded, then:
-		Set pVelY to 0-30.0.
+		Set pVelY to 0-20.0.
 		Set pY to pY - 1.0.
 		Set isGrounded to false.
 	Leave the if statement.
+
+	# Jump higher if the key is held
+	If Get the key W and pVelY < 0.0, then:
+		Set pVelY to pVelY - 1.0.
+	Leave the if statement.
+
+	# Falling faster
+	If Get the key S, then:
+		Set pVelY to pVelY + 1.0.
+	Leave the if statement.
+	
 
 	# See if the player is falling (not grounded) by vel
 	If pVelY > gravity * 2, then: Set isGrounded to false. Leave the if statement.

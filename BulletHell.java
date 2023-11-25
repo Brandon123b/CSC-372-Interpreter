@@ -297,7 +297,6 @@ class DrawingCanvas extends JPanel {
 	public void AttackManager(){
 
 		attackCooldown = attackCooldown-1;
-		System.out.println(bulletAttackCount);
 		if (bulletAttackCount>0) {
 			bulletAttackCooldown = bulletAttackCooldown-1;
 			if (bulletAttackCooldown<=0) {
@@ -345,7 +344,6 @@ class DrawingCanvas extends JPanel {
 		double bulletVelX = (pX-bulletX)/100;
 		double bulletVelY = (pY-bulletY)/100;
 		CreateBullet(bulletX, bulletY, bulletVelX, bulletVelY);
-		System.out.println("Buller Spawned");
 	}
 	public void CreateBullet(double posX, double posY, double velX, double velY){
 
@@ -413,9 +411,15 @@ class DrawingCanvas extends JPanel {
 			pVelY = terminalVelocity;
 		}
 		if (keysPressed_.contains(87)&&isGrounded) {
-			pVelY = 0-30.0;
+			pVelY = 0-20.0;
 			pY = pY-1.0;
 			isGrounded = false;
+		}
+		if (keysPressed_.contains(87)&&pVelY<0.0) {
+			pVelY = pVelY-1.0;
+		}
+		if (keysPressed_.contains(83)) {
+			pVelY = pVelY+1.0;
 		}
 		if (pVelY>gravity*2) {
 			isGrounded = false;
