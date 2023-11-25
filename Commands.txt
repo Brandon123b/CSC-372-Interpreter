@@ -65,8 +65,8 @@ GUI:
 
 	# The function can have no parameters
 	# Or it can have one parameter of the correct GUI type
-	When <Var> is clicked, call <function>.		\
-		Ex: "When MyCircle is clicked, call MyFunction."	# Myfunction must have no parameters, or a single circle parameter	
+	When <Var> is clicked call <function>.		
+		Ex: "When MyCircle is clicked call MyFunction."		# Myfunction must have no parameters, or a single circle parameter	
 
 	// Circle
 	Set the radius of Circle <Var> to <expr>		# Radius

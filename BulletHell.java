@@ -10,10 +10,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class MainTemplate {
+public class BulletHell {
 
 	public static void main(String[] args) {
-		JFrame frame = new JFrame("MainTemplate");
+		JFrame frame = new JFrame("BulletHell");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setSize(1920 / 2, 1080 / 2); // Default window size
 		frame.setLocationRelativeTo(null); // Center the window
@@ -23,7 +23,16 @@ public class MainTemplate {
 		frame.add(canvas);
 		frame.setVisible(true);
 
-		/* {Call_Start} */ // consider program args
+		if(args.length != 1) {
+			System.err.println("Invalid number of arguments specified!");
+			System.exit(1);
+		}
+		try {
+			canvas.Main(Integer.parseInt(args[0]));
+		} catch (Exception e) {
+			System.err.println("Invalid arguments specified!");
+			System.exit(1);
+		} // consider program args
 
 		canvas.startDrawing(); // Start drawing on the canvas
 	}
@@ -98,7 +107,7 @@ class DrawingCanvas extends JPanel {
 	public void startDrawing() {
 		Timer timer = new Timer(20, e -> {
 
-			/* {Call_GameLoop} */ // Only if it exists
+			Gameloop(); // Only if it exists
 			repaint();
 		});
 		timer.start();
@@ -128,13 +137,359 @@ class DrawingCanvas extends JPanel {
 	/* Interpreted Global Vars */
 	/* -------------------------------------------------------------------------- */
 
-	/* {Global_Vars} */
+		double pSize;
+	int intRet;
+	int seed;
+	List<Integer> bulletXVelList = new ArrayList<>();
+	Box hpBar;
+	List<Integer> bulletYVelList = new ArrayList<>();
+	List<Box> platformsList = new ArrayList<>();
+	List<Double> platformXPos = new ArrayList<>();
+	int hp;
+	double bulletRadius;
+	int attackCooldown;
+	double pSpeed;
+	List<Circle> bulletsList = new ArrayList<>();
+	boolean isGrounded;
+	Text titleText;
+	Box basePlatform;
+	Box player;
+	Text startButtonText;
+	List<Double> platformXSizes = new ArrayList<>();
+	Box startButtonBox;
+	double pX;
+	List<Double> platformYPos = new ArrayList<>();
+	double pY;
+	List<Integer> bulletYPosList = new ArrayList<>();
+	boolean isAlive;
+	List<Double> platformYSizes = new ArrayList<>();
+	List<Integer> bulletXPosList = new ArrayList<>();
+	Box backGround;
+	double pVelY;
+
 
 	/* -------------------------------------------------------------------------- */
 	/* Interpreted Functions */
 	/* -------------------------------------------------------------------------- */
 
-	/* {Functions} */
+		public void Main(int _seed){
+
+		System.out.println(_seed);
+		seed = _seed;
+		intRet = 0;
+		attackCooldown = 0;
+		LoadMenu();
+	}
+	public void LoadMenu(){
+
+		KillAll();
+		backGround = new Box();
+		drawableObjects_.add(backGround);
+		backGround.moveTo(0, 0);
+		backGround.setSize(1920, 1080);
+		backGround.setColor(new Color(10, 10, 25, 255));
+		InitHPBar();
+		titleText = new Text();
+		drawableObjects_.add(titleText);
+		titleText.moveTo(500, 340);
+		titleText.setSize(100);
+		titleText.setColor(new Color(255, 255, 255, 255));
+		titleText.setText("A Simple Bullet Hell");
+		startButtonBox = new Box();
+		drawableObjects_.add(startButtonBox);
+		startButtonBox.moveTo(600, 500);
+		startButtonBox.setSize(500, 100);
+		startButtonBox.setColor(new Color(255, 255, 255, 255));
+		startButtonBox.setOnClick(obj -> OnStart());
+		startButtonText = new Text();
+		drawableObjects_.add(startButtonText);
+		startButtonText.moveTo(600, 580);
+		startButtonText.setSize(100);
+		startButtonText.setColor(new Color(0, 0, 0, 255));
+		startButtonText.setText("Start");
+		OnStart();
+	}
+	public void OnStart(){
+
+		objectsToRemove_.add(titleText);
+		objectsToRemove_.add(startButtonBox);
+		objectsToRemove_.add(startButtonText);
+		StartGame();
+	}
+	public void LoadDeathMenu(){
+
+		isAlive = false;
+		titleText = new Text();
+		drawableObjects_.add(titleText);
+		titleText.moveTo(500, 340);
+		titleText.setSize(100);
+		titleText.setColor(new Color(255, 0, 0, 255));
+		titleText.setText("You Died");
+		startButtonBox = new Box();
+		drawableObjects_.add(startButtonBox);
+		startButtonBox.moveTo(600, 500);
+		startButtonBox.setSize(500, 100);
+		startButtonBox.setColor(new Color(255, 255, 255, 255));
+		startButtonBox.setOnClick(obj -> LoadMenu());
+		startButtonText = new Text();
+		drawableObjects_.add(startButtonText);
+		startButtonText.moveTo(600, 580);
+		startButtonText.setSize(100);
+		startButtonText.setColor(new Color(0, 0, 0, 255));
+		startButtonText.setText("Main Menu");
+	}
+	public void StartGame(){
+
+		isAlive = true;
+		SpawnPlatforms();
+		InitPlayer();
+		CreateBullet(100, 100, 10, 10);
+	}
+	public void SpawnPlatforms(){
+
+		basePlatform = new Box();
+		drawableObjects_.add(basePlatform);
+		double xSize = 1920*2/3.0;
+		double ySize = 150.0;
+		double xPos = 1920/5.0;
+		double yPos = 1080*4/5.0;
+		basePlatform.setSize(xSize, ySize);
+		basePlatform.moveTo(xPos, yPos);
+		basePlatform.setColor(new Color(255, 255, 255, 255));
+		platformsList.add(basePlatform);
+		platformXSizes.add(xSize);
+		platformYSizes.add(ySize);
+		platformXPos.add(xPos);
+		platformYPos.add(yPos);
+	}
+	public void InitPlayer(){
+
+		pX = 1920.0/2.0;
+		pY = 300.0;
+		pSpeed = 15.0;
+		pVelY = 0.0;
+		pSize = 50.0;
+		isGrounded = false;
+		hp = 100;
+		player = new Box();
+		drawableObjects_.add(player);
+		player.setSize(pSize, pSize);
+		player.setColor(new Color(0, 255, 0, 255));
+		player.moveTo(pX, pY);
+	}
+	public void InitHPBar(){
+
+		hpBar = new Box();
+		drawableObjects_.add(hpBar);
+		hpBar.setSize(300, 50);
+		hpBar.setColor(new Color(0, 255, 0, 255));
+		hpBar.moveTo(30, 30);
+	}
+	public void AttackManager(){
+
+		attackCooldown = attackCooldown-1;
+		if (attackCooldown<=0) {
+			Random(1);
+			if (intRet==0) {
+				CreateVerticalLine();
+				attackCooldown = 60;
+			}
+		}
+	}
+	public void CreateVerticalLine(){
+
+		Random(2);
+		int side = intRet;
+		if (side==0) {
+			side = 0-1;
+		}
+		int bulletCount = 20;
+		int i = 0;
+		while (i<bulletCount) {
+			int posX = 1920/2+side*1920*2/3;
+			int posY = 1080/bulletCount*i;
+			int velX = (0-side)*10;
+			CreateBullet(posX, posY, velX, 0);
+			i = i+1;
+		}
+	}
+	public void CreateBullet(int posX, int posY, int velX, int velY){
+
+		bulletRadius = 10.0;
+		Circle bullet = new Circle();
+		objectstoAdd_.add(bullet);
+		bullet.setRadius(bulletRadius);
+		bullet.setColor(new Color(255, 0, 0, 255));
+		bullet.moveTo(posX, posY);
+		bulletsList.add(bullet);
+		bulletXPosList.add(posX);
+		bulletYPosList.add(posY);
+		bulletXVelList.add(velX);
+		bulletYVelList.add(velY);
+	}
+	public void KillAll(){
+
+		int i = 0;
+		while (i<bulletsList.size()) {
+			Circle bullet = bulletsList.get(i);
+			bulletsList.remove(i);
+			bulletXPosList.remove(i);
+			bulletYPosList.remove(i);
+			bulletXVelList.remove(i);
+			bulletYVelList.remove(i);
+			objectsToRemove_.add(bullet);
+		}
+		i = 0;
+		while (i<platformsList.size()) {
+			Box platform = platformsList.get(i);
+			platformsList.remove(i);
+			platformXPos.remove(i);
+			platformYPos.remove(i);
+			platformXSizes.remove(i);
+			platformYSizes.remove(i);
+			objectsToRemove_.add(platform);
+		}
+	}
+	public void Gameloop(){
+
+		if (isAlive) {
+			MovePlayer();
+			MoveBullets();
+			HandleBulletCollisions();
+			AttackManager();
+		}
+	}
+	public void UpdateHPBar(){
+
+		int hpSize = hp*3;
+		hpBar.setSize(hpSize, 50);
+	}
+	public void MovePlayer(){
+
+		double gravity = 2.0;
+		double terminalVelocity = 40.0;
+		if (keysPressed_.contains(65)) {
+			pX = pX-pSpeed;
+		}
+		if (keysPressed_.contains(68)) {
+			pX = pX+pSpeed;
+		}
+		pVelY = pVelY+gravity;
+		if (pVelY>terminalVelocity) {
+			pVelY = terminalVelocity;
+		}
+		if (keysPressed_.contains(87)&&isGrounded) {
+			pVelY = 0-30.0;
+			pY = pY-1.0;
+			isGrounded = false;
+		}
+		if (pVelY>gravity*2) {
+			isGrounded = false;
+		}
+		pY = pY+pVelY;
+		player.moveTo(pX, pY);
+		int i = 0;
+		while (i<platformsList.size()) {
+			Box block = platformsList.get(i);
+			double blockX = platformXPos.get(i);
+			double blockY = platformYPos.get(i);
+			double BlockXSize = platformXSizes.get(i);
+			double BlockYSize = platformYSizes.get(i);
+			if (pX+pSize>blockX&&pX<blockX+BlockXSize&&pY+pSize>blockY&&pY<blockY+BlockYSize) {
+				double overlapX = pX+pSize-blockX;
+				double overlapX2 = blockX+BlockXSize-pX;
+				if (overlapX2<overlapX) {
+					overlapX = overlapX2;
+				}
+				double overlapY = pY+pSize-blockY;
+				double overlapY2 = blockY+BlockYSize-pY;
+				if (overlapY2<overlapY) {
+					overlapY = overlapY2;
+				}
+				if (overlapY<=overlapX) {
+					if (pY<blockY) {
+						pY = pY-overlapY;
+						isGrounded = true;
+						pVelY = 0.0;
+					}
+					if (pY>blockY) {
+						pY = pY+overlapY;
+					}
+				}
+				if (overlapX<overlapY) {
+					if (pX<blockX) {
+						pX = pX-overlapX;
+					}
+					if (pX>blockX) {
+						pX = pX+overlapX;
+					}
+				}
+			}
+			i = i+1;
+		}
+	}
+	public void MoveBullets(){
+
+		int i = 0;
+		while (i<bulletsList.size()) {
+			Circle bullet = bulletsList.get(0);
+			int bulletX = bulletXPosList.get(0);
+			int bulletY = bulletYPosList.get(0);
+			int bulletVelX = bulletXVelList.get(0);
+			int bulletVelY = bulletYVelList.get(0);
+			bulletsList.remove(0);
+			bulletXPosList.remove(0);
+			bulletYPosList.remove(0);
+			bulletXVelList.remove(0);
+			bulletYVelList.remove(0);
+			bulletX = bulletX+bulletVelX;
+			bulletY = bulletY+bulletVelY;
+			bulletsList.add(bullet);
+			bulletXPosList.add(bulletX);
+			bulletYPosList.add(bulletY);
+			bulletXVelList.add(bulletVelX);
+			bulletYVelList.add(bulletVelY);
+			bullet.moveTo(bulletX, bulletY);
+			i = i+1;
+		}
+	}
+	public void HandleBulletCollisions(){
+
+		int i = 0;
+		while (i<bulletsList.size()) {
+			Circle block = bulletsList.get(i);
+			double blockX = bulletXPosList.get(i)-bulletRadius;
+			double blockY = bulletYPosList.get(i)-bulletRadius;
+			double BlockXSize = bulletRadius*2;
+			double BlockYSize = bulletRadius*2;
+			seed = seed+37;
+			if (isGrounded&&pX+pSize>blockX&&pX<blockX+BlockXSize&&pY+pSize>blockY&&pY<blockY+BlockYSize) {
+				hp = hp-20;
+				UpdateHPBar();
+				System.out.println("Hit");
+				if (hp<=0) {
+					LoadDeathMenu();
+					System.out.println("Dead");
+				}
+				bulletsList.remove(i);
+				bulletXPosList.remove(i);
+				bulletYPosList.remove(i);
+				bulletXVelList.remove(i);
+				bulletYVelList.remove(i);
+				objectsToRemove_.add(block);
+			}
+			i = i+1;
+		}
+	}
+	public void Random(int max){
+
+		seed = seed*1103515245+12345;
+		while (seed<0) {
+			seed = seed+2147483647;
+		}
+		intRet = seed%max;
+	}
+
 
 }
 

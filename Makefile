@@ -27,6 +27,10 @@ $(BIN_DIR)/%.class: $(SRC_DIR)/%.java
 World: all ExamplePrograms/World.class
 	java -cp $(BIN_DIR) World $(shell shuf -i 1-99999999 -n 1)
 
+# Shortcut for running BulletHell.mpl (random seed)
+BulletHell: all ExamplePrograms/BulletHell.class
+	java -cp $(BIN_DIR) BulletHell $(shell shuf -i 1-99999999 -n 1)
+
 clean:
 	rm -rf $(BIN_DIR)/*
 

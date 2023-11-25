@@ -1260,7 +1260,7 @@ public class Interpreter {
 		// Test if the var exisis
 		String[] CheckVariable = CheckVariable(name, blockVars);
 
-		String addToGUI = String.format(indent + "drawableObjects_.add(%s);\n", name);	
+		String addToGUI = String.format(indent + "objectstoAdd_.add(%s);\n", name);	
 
 		// Either declaires a new type, or assigns a value to an existing variable
 		if (CheckVariable[0].equals("")) {
