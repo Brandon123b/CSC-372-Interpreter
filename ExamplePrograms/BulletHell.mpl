@@ -9,7 +9,7 @@ Begin a function called Main with an int called _seed.
 	Set global seed to _seed.
 	Set global intRet to 0.
 
-	Set global attackCooldown to 0.
+	Set global attackCooldown to 0.0.
 	Set global bulletAttackCount to 0.
 	Set global bulletAttackCooldown to 0.
 
@@ -29,6 +29,12 @@ Begin a function called LoadMenu.
 	Set the color of backGround to (10, 10, 25, 255).
 
 	Call the function InitHPBar.
+
+	# Create a difficulty display below the health
+	Create a global Text called difficultyText.
+	Set the color of difficultyText to (255, 255, 255, 255).
+	Set the size of difficultyText to 36.
+	Move difficultyText to 50 and 120.
 
 	# Create a title
 	Create a global Text called titleText.
@@ -108,6 +114,8 @@ Leave the function.
 # Creates the main game.
 Begin a function called StartGame.
 
+	Set global difficulty to 0.2.
+
 	Set global isAlive to true.
 
 	Call the function SpawnPlatforms.
@@ -121,9 +129,9 @@ Begin a function called SpawnPlatforms.
 	# Create a long base platform
 	Create a global Box called basePlatform.
 	Set xSize to 1920*2/3.0.
-	Set ySize to 150.0.
+	Set ySize to 120.0.
 	Set xPos to 1920/5.0.
-	Set yPos to 1080*4/5.0.
+	Set yPos to 1080*3/5.0.
 
 	Set the size of basePlatform to xSize and ySize.
 	Move basePlatform to xPos and yPos.
@@ -172,39 +180,61 @@ Leave the function.
 # Manages when to Attacks
 Begin a function called AttackManager.
 
-	Set global attackCooldown to attackCooldown - 1.		# Cooldown for new attacks
+	Set global attackCooldown to attackCooldown - difficulty.		# Cooldown for new attacks
 
-	# If there are more bullets waiting to be fired, then fire them
-	If bulletAttackCount > 0, then:
-		Set bulletAttackCooldown to bulletAttackCooldown - 1.
+	Set increase to 0.0004.
 
-		# Don't fire too fast
-		If bulletAttackCooldown <= 0, then:
-			Call the function CreateBulletToPlayer.
-			Set bulletAttackCount to bulletAttackCount - 1.
+	# Increase the difficulty based on time
+	If difficulty >= 1.0, then: Set increase to 0.0002. Leave the if statement.
+	If difficulty >= 1.5, then: Set increase to 0.0001. Leave the if statement.
+	
+	Set difficulty to difficulty + increase.						# Increase the difficulty
 
-			Set bulletAttackCooldown to 4.
-		Leave the if statement.
-	Leave the if statement.
+	# Update the difficulty text
+	Set the text of difficultyText to "Difficulty: " + difficulty.
+
+	# Spawn bullets from the sky
+	Call the function CreateBulletRain.
+
+	# Continue spirl bullets
+	Call the function SpawnSpirlBullets.
 
 	# Attack if the cooldown is over
-	If attackCooldown <= 0, then:
+	If attackCooldown <= 0.0, then:
 
 		# Pick a random attack
-		Call the function Random with 2.
+		Call the function Random with 5.
 		Set attackType to intRet.
 
 		# Create a vertical line of bullets
 		If attackType = 0, then:
 			Call the function CreateVerticalLine.
-			Set attackCooldown to 30.
+			Set attackCooldown to 30.0.
+		Leave the if statement.
+
+		# Create a horizontal line of bullets
+		If attackType = 1, then:
+			Call the function CreateHorizontalLine.
+			Set attackCooldown to 30.0.
 		Leave the if statement.
 
 		# Load up bullets to be fired from the top of the screen
-		If attackType = 1, then:
-			Call the function Random with 12.
+		If attackType = 2, then:
+			Call the function Random with 30.
 			Set bulletAttackCount to bulletAttackCount + intRet.
-			Set attackCooldown to 15.
+			Set attackCooldown to 10.0.
+		Leave the if statement.
+
+		# Spawn bullets from a circle
+		If attackType = 3, then:
+			Call the function SpawnBulletCircle.
+			Set attackCooldown to 50.0.
+		Leave the if statement.
+
+		# Spawn bullets in a spirl
+		If attackType = 4, then:
+			Call the function SpawnBulletSpiral.
+			Set attackCooldown to 80.0.
 		Leave the if statement.
 
 	Leave the if statement.
@@ -235,6 +265,31 @@ Begin a function called CreateVerticalLine.
 	Exit the while.
 Leave the function.
 
+# Create a horizontal line of bullets from the top or bottom (randomly)
+Begin a function called CreateHorizontalLine.
+
+	# Choose a random side
+	Call the function Random with 2.
+	Set side to intRet.
+
+	# Side -1 is top, side 1 is bottom
+	If side = 0, then:
+		Set side to 0-1.
+	Leave the if statement.
+
+	Set bulletCount to 30.
+
+	# Create a line of bullets
+	Set i to 0.
+	While i < bulletCount:
+		Set posX to 1920/bulletCount * i.
+		Set posY to 1080/2 + side * 1080*2/3.
+		Set velY to (0-side) * 10.
+		Call the function CreateBullet with posX, posY, 0, velY.
+		Set i to i + 1.
+	Exit the while.
+Leave the function.
+
 # Spawn a bullet from the top of the screen to the player
 Begin a function called CreateBulletToPlayer.
 
@@ -249,6 +304,111 @@ Begin a function called CreateBulletToPlayer.
 
 	# Create the bullet
 	Call the function CreateBullet with bulletX, bulletY, bulletVelX, bulletVelY.
+Leave the function.
+
+# Spawn the bullets from the sky (Called every frame)
+Begin a function called CreateBulletRain.
+
+	# If there are more bullets waiting to be fired, then fire them
+	If bulletAttackCount > 0, then:
+		Set bulletAttackCooldown to bulletAttackCooldown - 1.
+
+		# Don't fire too fast
+		If bulletAttackCooldown <= 0, then:
+			Call the function CreateBulletToPlayer.
+			Set bulletAttackCount to bulletAttackCount - 1.
+
+			Set bulletAttackCooldown to 6.
+		Leave the if statement.
+	Leave the if statement.
+Leave the function.
+
+# Spawn bullets from a Circle
+Begin a function called SpawnBulletCircle.
+
+	# Find the center of the circle\
+	Call the function Random with 1920.
+	Set centerX to intRet.
+	Call the function Random with 1080.
+	Set centerY to intRet.
+
+	Set bulletCount to 30.
+	Set cos12 to 0.97814760073.
+	Set sin12 to 0.20791169082.
+
+	# Create a circle of bullets
+	Set i to 0.
+	Set velX to 3.0.
+	Set velY to 0.0.
+	While i < bulletCount:
+
+		# Rotate the velocity
+		Set temp to velX * cos12 - velY * sin12.
+		Set velY to velX * sin12 + velY * cos12.
+		Set velX to temp.
+
+		Call the function CreateBullet with centerX, centerY, velX, velY.
+		Set i to i + 1.
+	Exit the while.
+Leave the function.
+
+# Spawn bullets in a spirl
+Begin a function called SpawnBulletSpiral.
+
+	# Find the center of the circle
+	Call the function Random with 1920.
+	Set global spirlCenterX to intRet.
+	Call the function Random with 1080.
+	Set global spirlCenterY to intRet.
+
+	Add spirlCenterX to global spirlXPosList.
+	Add spirlCenterY to global spirlYPosList.
+	Add 100 to global spirlBulletCountList.
+	Add 5.0 to global spirlAngleXList.
+	Add 0.0 to global spirlAngleYList.
+Leave the function.
+
+# Spawn all spirl bullets for this frame (Called every frame)
+Begin a function called SpawnSpirlBullets.
+
+	# Spawn all bullets
+	Set i to 0.
+	While i < length of spirlBulletCountList:
+		Set bulletCount to index i of spirlBulletCountList.
+		Set centerX to index i of spirlXPosList.
+		Set centerY to index i of spirlYPosList.
+		Set angleX to index i of spirlAngleXList.
+		Set angleY to index i of spirlAngleYList.
+
+		Remove index i from spirlBulletCountList.
+		Remove index i from spirlXPosList.
+		Remove index i from spirlYPosList.
+		Remove index i from spirlAngleXList.
+		Remove index i from spirlAngleYList.
+
+		# Only if bullets are left
+		If bulletCount > 0, then:
+
+			Set cos30 to 0.86602540378.
+			Set sin30 to 0.5.
+
+			# Rotate the velocity
+			Set temp to angleX * cos30 - angleY * sin30.
+			Set angleY to angleX * sin30 + angleY * cos30.
+			Set angleX to temp.
+
+			# Readd the data
+			Add bulletCount - 1 to spirlBulletCountList.
+			Add centerX to spirlXPosList.
+			Add centerY to spirlYPosList.
+			Add angleX to spirlAngleXList.
+			Add angleY to spirlAngleYList.
+
+			Call the function CreateBullet with centerX, centerY, angleX, angleY.
+
+			Set i to i + 1.
+		Leave the if statement.
+	Exit the while.
 Leave the function.
 
 # ---------------------------------------------------------------------------- #
