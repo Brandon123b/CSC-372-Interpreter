@@ -11,7 +11,7 @@
 <conditional_start> ::= If <eval_expr>, then:
 <conditional_end>   ::= Leave the if statement.
 <type>              ::= string | int | bool | double
-<graphic_type>      ::= box | circle | text
+<graphic_type>      ::= box | circle | text | Line
 <var_set>           ::= Set <name> to <eval_expr>. | Set <name> to <math_expr>. | Set <name> to <value>.
                         | Set <name> to <function_call>.
                         | Set the <attr> of <graphic_type> to <math_expr>.
@@ -19,11 +19,33 @@
 <call_args>         ::= <name> | <name> and <name> | <mult_call_args> <name> and <name>
 <mult_call_args>    ::= <name>, | <name>, <mult_call_args>
 <block>             ::= <expr> <block> | <expr>
-<expr>              ::= <loop_start> <block> <loop_end> | <conditional_start> <block> <conditional_end>                       
-                        | <var_set> | <function_call> | <return_stmt>
-                        | Print <expr> to the console. | Create a <graphic_type> called <name>. 
-                        | Move <name> to <value> and <value>. | If <name> is clicked call function <function>. 
-                        | Remove <name> from the canvas.
+<expr>              ::= <loop_start> <block> <loop_end> | 
+						<conditional_start> <block> <conditional_end> |
+						<var_set> | 
+						<function_call> | 
+						<return_stmt> |
+						Get the key <key>. |
+                        Print <expr> to the console. | 
+						Create a <graphic_type> called <name>. |
+                        Move <name> to <value> and <value>. | 
+						If <name> is clicked call function <function>. | 
+						Remove <name> from the canvas. |
+						Create a [global] <graphic_type> called <name>. |
+						Move <name> to <eval_expr> and <eval_expr>. |
+						Remove <name> from the canvas. |
+						Set the color of <name> to (<name>, <name>, <name>, <name>). |
+						When <name> is clicked call <function>. |
+						Set the radius of Circle <name> to <eval_expr> |
+						Set the size of Box <name> to <eval_expr> and <eval_expr> |
+						Set the chords of <name> to (<eval_expr>, <eval_expr>) and (<eval_expr>, <eval_expr>). |
+						Set the size of <name> to <eval_expr>. |
+						Set the text of <name> to <eval_expr>. |
+						Set the size of <name> to <eval_expr>. |
+						Add <eval_expr> to <name>. |
+						Remove <eval_expr> from <name>. |
+						Remove index <eval_expr> from <name>. |
+						index <eval_expr> of <name> |
+						length of <name>
 <eval_expr>         ::= <eval_expr> or <and_expr> | <and_expr>
 <and_expr>          ::= <and_expr> and <not_expr> | <not_expr>
 <not_expr>          ::= not <bool> | <bool>
