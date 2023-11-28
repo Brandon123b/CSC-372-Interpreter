@@ -10,6 +10,10 @@ listed in Commands.txt. This language was designed to more closely resemble regu
 are case sensitive. The language is also (sometimes) whitespace sensitive. This means that you cannot have any whitespace in the middle 
 of a command other than a single space.
 
+Presentation Video:
+	There is a presentation video called "Presentation.mp4". This is a video of me presenting the language. It is a good overview of the language
+	and how it works. There is a clear tutorial of how to make your first program.
+
 # ---------------------------------------------------------------------------- #
 #                                   MakeFile                                   #
 # ---------------------------------------------------------------------------- #
@@ -35,10 +39,27 @@ include the subdirectory in the filename. ("make ExamplePrograms/Test1")
 
 (Assuming you are in the root directory)
 Example:
+	"make ExamplePrograms/Test1" -- This will run the Test1 program in the ExamplePrograms directory after compiling it. It just sets some 
+	variables and prints one.
+	
+	"make ExamplePrograms/Test1.comp" -- This will compile the Test1 program in the ExamplePrograms directory. It will not run the program.
+
+	"make ExamplePrograms/Test1.class" -- This will compile the Test1 program in the ExamplePrograms directory and compile the outputted java file 
+	into bin. It will not run the program.
+
+	"make ExamplePrograms/TestGUI" -- This will run the TestGUI program in the ExamplePrograms directory. This is a simple program that draws one
+									  of each GUI objects with a slight animation for some of them.
+
+	(Hardcoded make commands that give command line args)
+
 	"make World" -- This will run the world program in the ExamplePrograms directory. This is a cool-ish program. I reccomend
 					looking at it to see how the language works. It is a good example of how to use the language and what can be made.
 					"make World" is the same as "make ExamplePrograms/World" except that make World has command line args and cannot
 					be used without adding them to the makefile (random world seed).
+	
+	"make BulletHell" -- This will run the bullet hell program in the ExamplePrograms directory. This is an even cooler program. 
+						 "make BulletHell" is the same as "make ExamplePrograms/BulletHell" except that make BulletHell has command line
+						 args and cannot be used without adding them to the makefile (random seed).
 
 # ---------------------------------------------------------------------------- #
 #                             Other Important Info                             #
@@ -68,6 +89,9 @@ Errors:
 	can be quite strict and may not explain what is wrong with the command. If you encounter an error that you do not understand, I reccomend looking
 	at the types of the variables and making sure they are correct. Ints can be coverted to a double by adding 0.0 to the end of the int. (ex: 5+0.0).
 
+Scoping:
+	This language uses block scoping. Think of setting a variable as either "int i = 1" or "i = 1" depending on if the variable exists in the scope or not.
+
 # ---------------------------------------------------------------------------- #
 #                                Recomendations                                #
 # ---------------------------------------------------------------------------- #
@@ -81,6 +105,10 @@ Look at the top error first:
 
 Negatives are not supported:
 	There is no support for negative numbers. This is because some reason I assume? Use 0-{number} instead of -{number}. This is a simple fix that works well.
+
+Function return values may be implemented (IDK), but I don't know how to use it:
+	No clue, it was never documented if it was and I don't have the time to once again look at his code to understand it. I reccomend just using a global variable
+	to pass values between functions. (Look at the function called "Random" in World or BulletHell)
 
 # ---------------------------------------------------------------------------- #
 #                                Sample Programs                               #
