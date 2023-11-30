@@ -10,6 +10,11 @@ listed in Commands.txt. This language was designed to more closely resemble regu
 are case sensitive. The language is also (sometimes) whitespace sensitive. This means that you cannot have any whitespace in the middle 
 of a command other than a single space.
 
+Honestly, I wasn't expecting the example programs we had to write to be given by the teacher and be the same for everyone. I was expecting
+a bit of freedom that we don't seems to have, so the majority of this project seems pointless. Whats the point of expecting something 
+to be added to a language when we have no freedom to play with it? Well... Whatever...
+(The gui may be unused. Boring...)
+
 Presentation Video:
 	There is a presentation video called "Presentation.mp4". This is a video of me presenting the language. It is a good overview of the language
 	and how it works. There is a clear tutorial of how to make your first program.
@@ -104,7 +109,7 @@ Look at the top error first:
 	it's fixed before examining other errors. Often, resolving the initial error can automatically resolve the others.
 
 Negatives are not supported:
-	There is no support for negative numbers. This is because some reason I assume? Use 0-{number} instead of -{number}. This is a simple fix that works well.
+	There is no support for negative numbers. This is because of some reason I assume? Use 0-{number} instead of -{number}. This is a simple fix that works well.
 
 Function return values may be implemented (IDK), but I don't know how to use it:
 	No clue, it was never documented if it was and I don't have the time to once again look at his code to understand it. I reccomend just using a global variable
